@@ -5,7 +5,7 @@ export default defineUserConfig({
   base: "/",
 
   lang: "zh-CN",
-  title: "文档演示",
+  title: "RCore",
   description: "vuepress-theme-hope 的文档演示",
 
   theme,
