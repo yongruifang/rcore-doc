@@ -12,12 +12,12 @@ tagline: 基于Chisel语言, 设计一个Risc-V CPU。
 actions:
   - text: 实验
     icon: hammer
-    link: ./demo/
+    link: ./experiment/
     type: primary
 
   - text: 理论
-    icon: lightbulb
-    link: ./guide/
+    icon: flask
+    link: ./theory/
 
 # highlights:
 #   - header: 易于安装

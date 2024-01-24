@@ -10,17 +10,13 @@ export default navbar([
     children: [
       {
         text: "Lab1",
-        icon: "fire",
-        // prefix: "bar/",
-        // children: ["baz", { text: "...", icon: "ellipsis", link: "" }],
-        link: '/lab1'
+        icon: "tag",
+        link: '/experiment/lab1'
       },
       {
         text: "Lab2",
-        icon: "fire",
-        // prefix: "foo/",
-        // children: ["ray", { text: "...", icon: "ellipsis", link: "" }],
-        link: '/lab2'
+        icon: "tag",
+        link: '/experiment/lab2'
       },
     ],
   },
@@ -31,13 +27,13 @@ export default navbar([
     children: [
       {
         text: "ch1",
-        icon: "lightbulb",
-        link: '/ch1'
+        icon: "hashtag",
+        link: '/theory/ch1'
       },
       {
         text: "ch2",
-        icon: "lightbulb",
-        link: '/ch2'
+        icon: "hashtag",
+        link: '/theory/ch2'
       },
     ],
   },
