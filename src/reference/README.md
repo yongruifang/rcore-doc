@@ -3,6 +3,9 @@ title: 学习材料
 icon: list
 ---
 
+## <HopeIcon icon="//localhost:8080/assets/image/scala.svg" size="1.5rem" />Scala
+[scala3-book](https://docs.scala-lang.org/zh-cn/scala3/book/)
+
 ## <HopeIcon icon="//localhost:8080/assets/image/chisel-tool.svg" size="2rem" />Chisel
 [**online Chisel Bootcamp**](https://mybinder.org/v2/gh/freechipsproject/chisel-bootcamp/master): 在线互动教程
 
