@@ -42,4 +42,9 @@ export default navbar([
     icon: "book",
     link: "/reference/",
   },
+  {
+    text: "常见问题",
+    icon: "question",
+    link: "/trouble/",
+  }
 ]);

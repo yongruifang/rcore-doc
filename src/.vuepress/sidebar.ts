@@ -37,6 +37,12 @@ export default sidebar({
       icon: "book",
       prefix: "reference/",
       children: "structure",
+    },
+    {
+      text: "问题",
+      icon: "question",
+      prefix: "trouble/",
+      children: "structure",
     }
   ],
 });
