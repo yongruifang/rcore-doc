@@ -31,34 +31,18 @@ Error downloading https://github.com/coursier/coursier/releases/download/v2.1.8/
 1. [安装Scala CLI](https://scala-cli.virtuslab.org/install)
 2. [使用Scala CLI设置代理](https://scala-cli.virtuslab.org/docs/guides/power/proxy)
 ```bash
-scala-cli --power config httpProxy.address http://proxy.company.com:8081
+scala-cli --power config httpProxy.address <代理地址>:<代理端口>
 ```
 我的过程
+> 我的代理是<ins>https://172.17.16.1:7890</ins>
+> 中间断了一次, setup了两次，但总算装好
 ```bash
- .\cs setup
+(base) fyr@G2:~/.config/nvim$ scala-cli --power config httpProxy.address https://172.17.16.1:7890
+(base) fyr@G2:~/.config/nvim$ ./cs setup
 Checking if a JVM is installed
-Found a JVM installed under C:\Program Files\Java\jdk-21.
+Found a JVM installed under /usr/lib/jvm/java-8-openjdk-amd64.
 
-Checking if ~\AppData\Local\Coursier\data\bin is in PATH
-
-Checking if the standard Scala applications are installed
-  Found ammonite
-Error downloading https://github.com/coursier/coursier/releases/download/v2.1.8/cs-x86_64-pc-win32.zip
- scala-cli --power config httpProxy.address http://127.0.0.1:7890
- .\cs setup
-Checking if a JVM is installed
-Found a JVM installed under C:\Program Files\Java\jdk-21.
-
-Checking if ~\AppData\Local\Coursier\data\bin is in PATH
-
-Checking if the standard Scala applications are installed
-  Found ammonite
- scala-cli --power config httpProxy.address https://127.0.0.1:7890
- .\cs setup
-Checking if a JVM is installed
-Found a JVM installed under C:\Program Files\Java\jdk-21.
-
-Checking if ~\AppData\Local\Coursier\data\bin is in PATH
+Checking if ~/.local/share/coursier/bin is in PATH
 
 Checking if the standard Scala applications are installed
   Found ammonite
@@ -69,5 +53,26 @@ Checking if the standard Scala applications are installed
   Installed scala-cli
   Installed sbt
   Installed sbtn
+(base) fyr@G2:~/.config/nvim$ scala -version
+Scala code runner version 3.3.1 -- Copyright 2002-2023, LAMP/EPFL
+(base) fyr@G2:~/.config/nvim$ cs setup --yes
+Checking if a JVM is installed
+Found a JVM installed under /usr/lib/jvm/java-8-openjdk-amd64.
+
+Checking if ~/.local/share/coursier/bin is in PATH
+
+Checking if the standard Scala applications are installed
+  Found ammonite
+  Found cs
+  Found coursier
+  Found scala
+  Found scalac
+  Found scala-cli
+  Found sbt
+  Found sbtn
+  Installed scalafmt
+
+(base) fyr@G2:~/.config/nvim$ scalafmt -version
+scalafmt 3.7.17
 ```
 
