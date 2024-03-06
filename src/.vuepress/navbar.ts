@@ -18,6 +18,17 @@ export default navbar([
         icon: "tag",
         link: '/experiment/lab2'
       },
+      {
+        text: "Lab3",
+        icon: "tag",
+        link: '/experiment/lab3'
+      },
+      {
+        text: "Lab4",
+        icon: "tag",
+        link: '/experiment/lab4'
+      },
+
     ],
   },
   {
