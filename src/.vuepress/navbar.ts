@@ -11,24 +11,52 @@ export default navbar([
       {
         text: "Lab1",
         icon: "tag",
-        link: '/experiment/lab1'
+        link: "/experiment/lab1",
       },
       {
         text: "Lab2",
         icon: "tag",
-        link: '/experiment/lab2'
+        link: "/experiment/lab2",
       },
       {
         text: "Lab3",
         icon: "tag",
-        link: '/experiment/lab3'
+        link: "/experiment/lab3",
       },
       {
         text: "Lab4",
         icon: "tag",
-        link: '/experiment/lab4'
+        link: "/experiment/lab4",
+      },
+      {
+        text: "Lab5",
+        icon: "tag",
+        link: "/experiment/lab5",
       },
 
+      {
+        text: "Lab6",
+        icon: "tag",
+        link: "/experiment/lab6",
+      },
+
+      {
+        text: "Lab7",
+        icon: "tag",
+        link: "/experiment/lab7",
+      },
+
+      {
+        text: "Lab8",
+        icon: "tag",
+        link: "/experiment/lab8",
+      },
+
+      {
+        text: "Lab9",
+        icon: "tag",
+        link: "/experiment/lab9",
+      },
     ],
   },
   {
@@ -39,32 +67,32 @@ export default navbar([
       {
         text: "ch1",
         icon: "hashtag",
-        link: '/theory/ch1'
+        link: "/theory/ch1",
       },
       {
         text: "ch2",
         icon: "hashtag",
-        link: '/theory/ch2'
+        link: "/theory/ch2",
       },
       {
         text: "ch3",
         icon: "hashtag",
-        link: '/theory/ch3'
+        link: "/theory/ch3",
       },
       {
         text: "ch4",
         icon: "hashtag",
-        link: '/theory/ch4'
+        link: "/theory/ch4",
       },
       {
         text: "ch5",
         icon: "hashtag",
-        link: '/theory/ch5'
+        link: "/theory/ch5",
       },
       {
         text: "ch6",
         icon: "hashtag",
-        link: '/theory/ch6'
+        link: "/theory/ch6",
       },
     ],
   },
@@ -77,5 +105,5 @@ export default navbar([
     text: "常见问题",
     icon: "question",
     link: "/trouble/",
-  }
+  },
 ]);
