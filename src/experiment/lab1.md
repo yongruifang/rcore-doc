@@ -3,26 +3,23 @@ title: 1. MIPS lab
 icon: tag
 headerDepth: 3
 ---
-
-## lab1: MIPS指令集实验
-
-### 目标
+## 目标
 - 了解WinMIPS64的基本功能和作用
 - 掌握MIPS指令、初步建立指令流水线执行的感性认识
 - 掌握工具的基本命令和操作，为流水线实验做准备。
 
-### 内容
+## 内容
 1. 下载WinMIPS64，运行样例代码，观察各个窗口的展示。
 2. 使用WinMIPS64的IO方法。
 3. 编写完整的sort程序
 
-### 软件介绍
+## 软件介绍
 WinMIPS64官网: `indigo.ie/~mscott/`  
 软件下载: `indigo.ie/~mscott/winmips64.zip`  
 文档下载: `http://indigo.ie/~mscott/winmipstut.docx`  
 
-### 快速上手
-#### 1. 启动与配置
+## 快速上手
+### 1. 启动与配置
 - 七个子窗口  
     (1) pipeline 流水线：观察指令所在阶段  
     (2) code 代码：地址、内容、汇编指令  
@@ -47,7 +44,7 @@ configure菜单还有其他四个配置
 - [ ] enable delay slot  
 **本次实验 不勾选 enable forwarding**
 
-#### 2. 加载测试程序
+### 2. 加载测试程序
 - 编辑测试程序 sum.s
 ```asmatmel
 .data
@@ -71,7 +68,7 @@ winmips文件夹内有asm.exe, 用于语法检查
 - 加载程序
 <kbd>file->open</kbd>
 
-#### 3. 模拟  
+### 3. 模拟  
 > **本次实验 不勾选 enable forwarding**  
 
 <kbd>execution > single cycle</kbd>  
@@ -91,9 +88,9 @@ winmips文件夹内有asm.exe, 用于语法检查
 - 一次执行五个周期，无视断点
 - 可以设置断点，在**Code窗口**对指令所在行双击左键，指令变成蓝色代表断点生效。点击<kbd>run to</kbd>会将时钟周期推进到下一个断点。
 
-### 任务1. print "Hello World!"
+## 任务1. print "Hello World!"
 编辑echo程序, 在终端打印"Hello World!"
-#### CONTROL 和 DATA 是使用终端输入输出的关键
+> CONTROL 和 DATA 是使用终端输入输出的关键
 ```asmatmel
 .data
 str:      .asciiz "Hello World!"
@@ -121,11 +118,11 @@ halt
 ;8, read the DATA from the keyboard
 ;9, read one byte from DATA, no character echo.
 ```
-### 任务2. bubble sort
+## 任务2. bubble sort
 - 对一组整型数组进行冒泡排序
 - 要求实现swap函数
 - 数据样例: `array: .word 8,6,3,7,1,0,9,4,5,2`
-#### 分析
+### 分析
 需要对十个数进行排序，要求在sort函数中调用swap，使用栈的思想，在函数嵌套时保存$a的值。
 最后终端的打印结果应该是:
 ```bash
@@ -152,7 +149,7 @@ after sort the array is:
 8
 9
 ```
-#### 代码实现
+### 代码实现
 ```asmatmel
 
 ```
