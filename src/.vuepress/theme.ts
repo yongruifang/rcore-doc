@@ -69,6 +69,7 @@ export default hopeTheme({
       imgLazyload: true,
       imgSize: true,
       include: true,
+      tasklist: true,
       mark: true,
       stylize: [
         {

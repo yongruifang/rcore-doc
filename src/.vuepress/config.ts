@@ -1,6 +1,5 @@
 import { defineUserConfig } from "vuepress";
-// import theme from "./theme.js";
-import {hopeTheme} from 'vuepress-theme-hope';
+import theme from "./theme.js";
 
 export default defineUserConfig({
   base: "/",
@@ -9,15 +8,7 @@ export default defineUserConfig({
   title: "RCore",
   description: "vuepress-theme-hope 的文档演示",
 
-  //theme,
-  theme: hopeTheme({
-    plugins: {
-      mdEnhance: {
-        tasklist: true,
-      }
-    }
-  })
-
+  theme,
   // 和 PWA 一起启用
   // shouldPrefetch: false,
 
