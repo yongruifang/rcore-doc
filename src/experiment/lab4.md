@@ -1,5 +1,5 @@
 ---
-title: 4. 五级流水线与冒险
+title: 4. MIPS流水线与冒险
 icon: tag
 headerDepth: 3
 ---
