@@ -35,6 +35,26 @@ export default navbar([
         icon: "hashtag",
         link: '/theory/ch2'
       },
+      {
+        text: "ch3",
+        icon: "hashtag",
+        link: '/theory/ch3'
+      },
+      {
+        text: "ch4",
+        icon: "hashtag",
+        link: '/theory/ch4'
+      },
+      {
+        text: "ch5",
+        icon: "hashtag",
+        link: '/theory/ch5'
+      },
+      {
+        text: "ch6",
+        icon: "hashtag",
+        link: '/theory/ch6'
+      },
     ],
   },
   {
