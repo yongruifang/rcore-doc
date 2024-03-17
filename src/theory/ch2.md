@@ -44,6 +44,8 @@ val a = Bool()
 // use method B
 val b = true.B  
 val c = false.B
+
+[Why Bool(true) != Bool(true) in chisel3?](https://stackoverflow.com/questions/68884285/why-booltrue-booltrue-in-chisel3)
 ```
 ## 2. 运算符
 ### 2.1 四则基本运算
