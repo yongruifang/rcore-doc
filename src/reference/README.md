@@ -32,3 +32,7 @@ icon: list
 ## <HopeIcon icon="tags" size="1.5rem" /> 教学资源
 [YatCPU实验文档](https://yatcpu.sysu.tech/): 开源、开发中的教学用RISC-V处理器
 
+## <HopeIcon icon="tools" size="1.5rem" /> 在线工具 
+[riscv指令在线转换器](https://luplab.gitlab.io/rvcodecjs/): 汇编指令与机器码的在线转换
+
+
