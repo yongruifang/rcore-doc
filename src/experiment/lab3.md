@@ -79,6 +79,9 @@ PC初始值为0
 观察四条指令的执行过程的波形
 
 ## 步骤
+
+![[b站视频录制](https://www.bilibili.com/video/BV1Ef421Z7Te)](/assets/image/lab3/chisel-getting-start.png)
+
 ### 1. 选择build.sbt构建文件
 scala库中与Chisel和Chisel test相关的部分是在构建过程中通过Maven仓库下载的。
 build.sbt文件无需手动编写，官方推荐克隆[chisel-template](https://github.com/chipsalliance/chisel-template)
@@ -213,7 +216,7 @@ import chisel3.experimental.BundleLiterals._
 class DecoderSpec extends AnyFreeSpec with ChiselScalatestTester {
   "Decoder: add x1, x2, x3" in {
     test(new Decoder) { dut =>
-      dut.io.Instr_word.poke("0x003100b3".U)
+      dut.io.Instr_word.poke("x003100b3".U)
       dut.io.add_op.expect(Instructions.ADD_ON)
       dut.io.sub_op.expect(Instructions.SUB_OFF)
       dut.io.lw_op.expect(Instructions.LW_OFF)
@@ -305,7 +308,7 @@ class IMemoryIO extends Bundle {
 
 class IMemory(memoryFile: String = "") extends Module {
   val io = IO(new IMemoryIO)
-  val mem = SyncReadMem(1024, UInt(32.W))
+  val mem = SyncReadMem(32, UInt(32.W))
   io.rdData := mem.read(io.rdAddr)
   io.rdData := mem(io.rdAddr)
   when(io.wrEna === 1.U) {
@@ -357,11 +360,11 @@ import chisel3._
 
 class PC extends Module {
   val io = IO(new Bundle {
-    val pcIn = Input(UInt(32.W))
+    val pcIn = Input(UInt(5.W))
     val pc_sel = Input(UInt(1.W))
-    val pcOut = Output(UInt(32.W))
+    val pcOut = Output(UInt(5.W))
   })
-  val pc = RegInit(0.U(32.W))
+  val pc = RegInit(0.U(5.W))
   io.pcOut := pc
   pc := Mux(io.pc_sel === 1.U, io.pcIn, io.pcOut + 1.U)
 }
