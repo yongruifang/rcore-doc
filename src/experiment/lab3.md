@@ -1,5 +1,5 @@
 ---
-title: 3. Chisel编程(实现取指译码)
+title: 3. (Chisel)取指令和译码设计 
 icon: tag
 headerDepth: 3
 ---
@@ -11,6 +11,10 @@ headerDepth: 3
 ## 内容
 ### 1. 译码器的设计
 完成add, sub, lw, sw指令译码。其他指令一律译为nop
+
+译码器如图所示:
+
+![译码器](/assets/image/lab3/decoder.png)
 ```normal
 Input: Instr_word[31:0]
 Output: 
@@ -31,6 +35,9 @@ jal ra, 100    : 0x064000ef b00000110010000000000_00001_1101111
 ```
 
 ### 2. 寄存器文件的设计
+
+![寄存器文件](/assets/image/lab3/regfile.png)
+
 32-bit的寄存器 x 32 
 允许两读一写
 - r0固定读出0
@@ -51,6 +58,9 @@ rs1=5, rs2=8, wb_data=0x1234, reg_wb=1, rf_wren=1
 ```
 
 ### 3. 实现32-word的指令存储器并组合模块。
+
+![指令存储器](/assets/image/lab3/imemory.png)
+
 内存: 32字指令存储器
 地址0存储4条指令。
 ```asmatmel
@@ -61,6 +71,9 @@ sw x5, 104(x2) : 0x06512423
 jal ra, 100    : 0x064000ef
 ```
 - 组合 指令存储器，寄存器文件，译码器。
+
+![组合模块](/assets/image/lab3/junction.png)
+
 PC初始值为0  
 目标：逐条地取指、译码。  
 观察四条指令的执行过程的波形
