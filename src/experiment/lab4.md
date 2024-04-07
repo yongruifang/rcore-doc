@@ -82,3 +82,153 @@ halt
 指令序列调整30分   
 forwarding完成记录并解释正确，得20分  
 指令调整后，结构相关得到解决，得30分  
+
+
+## 矩阵相加
+### 调整指令序列
+:::code-tabs #shell 
+@tab 1 
+```asmatmel
+ld r16, len(r0)
+slt r8, r17, r16 
+```
+
+@tab 2 
+```asmatmel
+ld r9, 0(r0)
+ld r10, 0(r10)
+daddi r12, r9, r10 
+sd r12, 0(r11)
+daddi r19, r19, 1 
+j loop2
+```
+:::
+
+::: details 查看diff 
+
+![diff1](/assets/image/lab4/multadd-diff1.png)
+
+![diff2](/assets/image/lab4/multadd-diff2.png)
+
+:::
+### 启用forwarding
+::: info 原理是什么
+:::
+
+## 结构相关-连续的除法指令
+> 流水线的结构相关，是指流水线多条指令在同一时钟周期内争用同个功能部件的现象，是因为硬件资源满足不了指令重叠执行的要求而发生的冲突。
+
+在winMIPS64中，我们可以在除法中观察到这种现象。  
+::: details 代码
+::: code-tabs #shell 
+@tab 伪代码
+```c
+a = a / b;
+c = c / d;
+e = e + 1;
+f = f + 1;
+g = g + 1;
+h = h + 1;
+i = i + 1;
+j = j + 1;
+```
+@tab MIPS 
+```asmatmel
+.data
+a:    .word     12
+b:    .word     3
+c:    .word     15
+d:    .word     5
+e:    .word     1
+f:    .word     2
+g:    .word     3
+h:    .word     4
+i:    .word     5
+
+.text
+start:
+      ld r16,a(r0)
+      ld r17,b(r0)
+      ld r18,c(r0)
+      ld r19,d(r0)
+      ld r20,e(r0)
+      ld r21,f(r0)
+      ld r22,g(r0)
+      ld r23,h(r0)
+      ld r24,i(r0)
+      ddiv r16,r16,r16
+      ddiv r18,r18,r19
+      daddi r20,r20,1
+      daddi r21,r21,1
+      daddi r22,r22,1
+      daddi r23,r23,1
+      daddi r24,r24,1
+      sd r16,a(r0)
+      sd r19,d(r0)
+      sd r20,e(r0)
+      sd r21,f(r0)
+      sd r22,g(r0)
+      sd r23,h(r0)
+      sd r24,i(r0)
+      sd r25,j(r0)
+      sd r18,b(r0)
+      halt
+```
+:::
+
+两个连续的除法发生了明显的结构相关。  
+第二个除法为了等待上一个除法指令，阻塞了9个周期。  
+
+::: tip 调整指令序列
+将其他无关的指令塞入两条连续的除法指令之间。
+:::
+
+:::details 调整之后 
+
+![diff](/assets/image/lab4/divide-diff.png)
+
+```asmatmel
+.data
+a:    .word     12
+b:    .word     3
+c:    .word     15
+d:    .word     5
+e:    .word     1
+f:    .word     2
+g:    .word     3
+h:    .word     4
+i:    .word     5
+j:    .word     6
+
+.text
+start:
+      ld r16,a(r0)
+      ld r17,b(r0)
+      ld r18,c(r0)
+      ld r19,d(r0)
+      ddiv r16,r16,r17
+      ld r20,e(r0)
+      ld r21,f(r0)
+      ld r22,g(r0)
+      ld r23,h(r0)
+      ld r24,i(r0)
+      ld r25,j(r0)
+      daddi r20,r20,1
+      daddi r21,r21,1
+      daddi r22,r22,1
+      ddiv r18,r18,r19
+      daddi r23,r23,1
+      daddi r24,r24,1
+      daddi r25,r25,1
+      sd r16,a(r0)
+      sd r19,d(r0)
+      sd r20,e(r0)
+      sd r21,f(r0)
+      sd r22,g(r0)
+      sd r23,h(r0)
+      sd r24,i(r0)
+      sd r25,j(r0)
+      sd r18,b(r0)
+      halt
+```
+:::
