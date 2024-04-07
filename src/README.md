@@ -8,7 +8,7 @@ bgImageDark: https://theme-hope-assets.vuejs.press/bg/6-dark.svg
 bgImageStyle:
   background-attachment: fixed
 heroText: RCore
-tagline: 基于Chisel语言, 设计一个Risc-V CPU。
+tagline: 基于Chisel语言, 设计一个RISC-V CPU。
 actions:
   - text: 实验
     icon: hammer

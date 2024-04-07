@@ -27,6 +27,12 @@ export default sidebar({
       children: "structure",
     },
     {
+      text: "新实验",
+      icon: "hammer",
+      prefix: "newlab/",
+      children: "structure",
+    },
+    {
       text: "理论",
       icon: "flask",
       prefix: "theory/",
