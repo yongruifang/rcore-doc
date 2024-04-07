@@ -20,6 +20,7 @@ headerDepth: 3
 
 ## 代码设计
 ### 乘法器-忽略溢出
+:::details ignore_overflow_multiplier.s
 ```asmatmel
 	.data
 CONTROL: .word32 0x10000
@@ -73,7 +74,9 @@ zero:	dsll r3,r3,1
  
 	halt
 ```
+:::
 ### 乘法器-溢出提示
+:::details prompt_overflow_multiplier.s
 ```asmatmel
 	.data
 CONTROL: .word32 0x10000
@@ -139,3 +142,4 @@ zero:	dsll r3,r3,1
  
 end:	halt
 ```
+:::

@@ -30,6 +30,7 @@ WinMIPS64官网: `indigo.ie/~mscott/`
     (7) terminal 终端：负责程序的输入/输出 
 - 重置: <kbd>file > reset MIPS64</kbd>  
 - 架构配置: <kbd>configure > architecture</kbd>
+:::details 配置详情
 ```bash
 code address bus: 10
 data address bus: 10
@@ -37,15 +38,19 @@ FP addition latency: 4
 FP multiplier latency: 7
 FP division latency: 24
 ```
+:::
 configure菜单还有其他四个配置
 - [ ] multi-step
-- [ ] ~~enable forwarding~~
+- [ ] enable forwarding
 - [ ] enable branch target buffer
 - [ ] enable delay slot  
-**本次实验 不勾选 enable forwarding**
+
+>[!warning]
+> **本次实验 不勾选 enable forwarding**
 
 ### 2. 加载测试程序
-- 编辑测试程序 sum.s
+- 编辑测试程序 **sum.s**
+:::details sum.s
 ```asmatmel
 .data
 A:  .word 10
@@ -59,8 +64,9 @@ dadd    r3, r4, r5
 sd  r3, C(r0)
 halt
 ```
-- 检查语法
-winmips文件夹内有asm.exe, 用于语法检查
+:::
+- 检查语法  
+**winmips** 文件夹内有 **asm.exe**, 用于语法检查
 ```bash
 进入文件夹
 执行命令 ./asm.exe sum.s
@@ -69,28 +75,36 @@ winmips文件夹内有asm.exe, 用于语法检查
 <kbd>file->open</kbd>
 
 ### 3. 模拟  
-> **本次实验 不勾选 enable forwarding**  
 
-<kbd>execution > single cycle</kbd>  
+::: info 如何设置断点? 
+在**Code窗口**, 对指令所在行双击左键，指令变成<font color="blue">蓝色</font>代表断点生效。  
+点击<kbd>run to</kbd>会将时钟周期推进到下一个断点。
+:::
 
-指令在流水线不同阶段会呈现不同颜色
+> [!tip] 
+> 指令在流水线不同阶段会呈现不同颜色
 
-- 注意: 到第五个时钟周期的时候看`dadd r3, r4, r5`  
-该指令没有从Decode 跳转到 Execute, 也就是没有从蓝色变成红色。而是停留在 Decode阶段。仍然是蓝色。  
-终端显示 `RAW stall in ID (RS)`  
+<kbd>execution > single cycle</kbd> : 逐步运行  
+<kbd>execution > multi cycle</kbd>  :  一次执行五个周期  
+1. 到第五个时钟周期的时候观察`dadd r3, r4, r5`  
+2. 没有从Decode 跳转到 Execute, 也就是<u>没有从<font color="blue">蓝色</font>变成<font color="red">红色</font></u>  
+3. 而是停留在 Decode阶段。仍然是<font color="blue">蓝色</font>。    
+4. 终端显示 `RAW stall in ID (RS)`  
 `sd r3, C(r0)`指令也保持黄色(Fetch阶段)  
 
-- 目光转移到**Cycles窗口** 
-因为发生了数据相关。第五条指令依赖r5，但是r5的值此时不可用。  
-之所以不可用，是因为没有启用forwarding, 刚好`ld r5, B(r0)`在这个周期是r5的写回阶段，下一周期才允许读取r5.  
+5. 此刻的**Cycles窗口**发生的**数据相关**冒险  
+第五条指令需要读取r5的值,  
+而`ld r5, B(r0)`在这个时钟周期需要对r5进行写回，<b> 下一周期才允许读取r5</b>。  
+启用forwarding可以解决这个问题。  
 
-<kbd>execution > multi cycle</kbd>  
-- 一次执行五个周期，无视断点
-- 可以设置断点，在**Code窗口**对指令所在行双击左键，指令变成蓝色代表断点生效。点击<kbd>run to</kbd>会将时钟周期推进到下一个断点。
+
+
+
 
 ## 任务1. print "Hello World!"
-编辑echo程序, 在终端打印"Hello World!"
+编辑**echo.s**, 在终端打印`"Hello World!"`
 > CONTROL 和 DATA 是使用终端输入输出的关键
+::: details echo.s
 ```asmatmel
 .data
 str:      .asciiz "Hello World!"
@@ -118,6 +132,7 @@ halt
 ;8, read the DATA from the keyboard
 ;9, read one byte from DATA, no character echo.
 ```
+:::
 ## 任务2. bubble sort
 - 对一组整型数组进行冒泡排序
 - 要求实现swap函数
@@ -126,7 +141,7 @@ halt
 需要对十个数进行排序，要求在sort函数中调用swap，使用栈的思想，在函数嵌套时保存$a的值。
 > 注意: 需要将SP初始化为内存最高地址，否则初始化为0，使得SP-1将会指向0xffffffff，导致超出winmips默认的内存空间。 
 
-最后终端的打印结果应该是:
+::: details 最后终端的打印结果应该是:
 ```bash
 before sort the array is:
 8
@@ -151,7 +166,9 @@ after sort the array is:
 8
 9
 ```
+:::
 ### 代码实现
+::: details bubble_sort.s
 ```asmatmel
 .data
 array: 	.word 8,6,3,7,1,0,9,4,5,2
@@ -275,3 +292,4 @@ fine:
 	daddi r29,r29,28
 	jr r31
 ```
+:::

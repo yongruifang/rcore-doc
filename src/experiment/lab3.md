@@ -79,8 +79,7 @@ PC初始值为0
 观察四条指令的执行过程的波形
 
 ## 步骤
-
-![[b站视频录制](https://www.bilibili.com/video/BV1Ef421Z7Te)](/assets/image/lab3/chisel-getting-start.png)
+[b站录屏](https://www.bilibili.com/video/BV1Ef421Z7Te)
 
 ### 1. 选择build.sbt构建文件
 scala库中与Chisel和Chisel test相关的部分是在构建过程中通过Maven仓库下载的。
@@ -91,6 +90,7 @@ cd example
 sbt run 
 ```
 > 因为chisel-template更新的频率较快，所以提供本次使用的`build.sbt`：
+:::details build.sbt
 ```scala 
 // See README.md for license details.
 
@@ -120,7 +120,9 @@ lazy val root = (project in file("."))
   )
 
 ```
+:::
 ### 2. 编写Decoder.scala和DecoderSpec.scala 
+:::details 代码实现
 :::code-tabs#shell 
 @tab Decoder 
 ```scala 
@@ -231,6 +233,7 @@ class DecoderSpec extends AnyFreeSpec with ChiselScalatestTester {
 
 
 ### 3. 编写Regfile和RegfileSpec
+::: details 代码实现
 ::: code-tabs#shell 
 @tab Regfile 
 ```scala 
@@ -291,6 +294,7 @@ class RegfileSpec extends AnyFreeSpec with ChiselScalatestTester {
 
 ### 4. 编写IMemory和IMemorySpec
 
+::: details 代码实现
 ::: code-tabs#shell 
 @tab IMemory  
 ```scala 
@@ -351,6 +355,7 @@ class IMemorySpec extends AnyFreeSpec with ChiselScalatestTester {
 :::
 
 ### 5. 组合电路，实现取指译指的连续动作。
+::: details 代码实现
 ::: code-tabs#shell 
 @tab Junction
 ```scala 

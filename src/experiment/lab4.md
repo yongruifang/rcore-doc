@@ -24,6 +24,7 @@ for(int i = 0; i < 4; i ++) {
 }
 ```
 转换成MIPS的汇编。
+:::details 汇编代码
 ```asmatmel
 .data
 a:  .word   1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4
@@ -65,6 +66,7 @@ j   loop1
 exit1:
 halt
 ```
+:::
 
 ### 内容规划
 
