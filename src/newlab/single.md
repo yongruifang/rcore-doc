@@ -272,7 +272,7 @@ rs2_data: 0x00000000
 ```
 :::
 
-### lw + sw  
+### lw
 :::details 代码
 :::code-tabs #shell 
 @tab Instructions
@@ -467,38 +467,32 @@ wb_data: 0x00802303
 
 :::details 代码
 :::code-tabs #shell 
-@tab Core 
-```scala 
-  val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
-  val imm_s = Cat(inst(31,25), inst(11,7))
-  val imm_s_sext = Cat(Fill(20, imm_i(11)), imm_i)
-  
-  /*================ EX阶段 ==================*/
-  val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
-    (inst === LW) -> (rs1_data + imm_i_sext),
-    (inst === SW) -> (rs1_data + imm_s_sext)
-  ))
-  /*================ MEM阶段 =================*/
-  io.dmem.addr := alu_out
-  io.dmem.write_enable := (inst === SW)
-  io.dmem.write_data := rs2_data
-  /*================ WB阶段 ==================*/
-  val wb_data = io.dmem.read_data
-  when(inst === LW) {
-
-@@ -52,5 +58,7 @@ class Core extends Module{
-  printf(p"wb_addr, 0x${Hexadecimal(wb_addr)}\n")
-  printf(p"alu_out: 0x${Hexadecimal(alu_out)}\n")
-  printf(p"wb_data: 0x${Hexadecimal(wb_data)}\n")
-  printf(p"dmem.wen: 0x${Hexadecimal(io.dmem.write_enable)}\n")
-  printf(p"dmem.wdata: 0x${Hexadecimal(io.dmem.write_data)}\n")
-  printf("-----------\n")
+@tab README 
+```md 
++++
+23
+28
+60
+00
+sw x6, 16(x0)
+0x00602823
++++
+```
+@tab example.hex.txt 
+```txt 
++++
+23
+28
+60
+00
++++
 ```
 @tab Memory 
 ```scala 
++++
   val write_enable = Input(Bool())
   val write_data = Input(UInt(WORD_LEN.W))
-}
++++
 class Memory(memoryFile: String="") extends Module {
   val io = IO(new Bundle {
 
@@ -508,32 +502,99 @@ class Memory(memoryFile: String="") extends Module {
     mem(io.dmem.addr)
 
   )
++++
   when(io.dmem.write_enable) {
     mem(io.dmem.addr) := io.dmem.write_data(7, 0) 
     mem(io.dmem.addr + 1.U) := io.dmem.write_data(15, 8) 
     mem(io.dmem.addr + 2.U) := io.dmem.write_data(23, 16)
     mem(io.dmem.addr + 3.U) := io.dmem.write_data(31, 24) 
   }
++++
 ```
-
-@tab SwSpec
+@tab Core 
 ```scala 
++++ 1
+  val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
+  val imm_s = Cat(inst(31,25), inst(11,7))
++++
+  
+  /*================ EX阶段 ==================*/
+  val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
+    (inst === LW) -> (rs1_data + imm_i_sext),
++++ 2
+    (inst === SW) -> (rs1_data + imm_s_sext)
++++
+  ))
+  /*================ MEM阶段 =================*/
+  io.dmem.addr := alu_out
++++ 3
+  io.dmem.write_enable := (inst === SW)
+  io.dmem.write_data := rs2_data
++++ 
+  /*================ WB阶段 ==================*/
+  val wb_data = io.dmem.read_data
+  when(inst === LW) {
 
-package single 
-import chisel3._
-import chiseltest._
-import org.scalatest.freespec.AnyFreeSpec
-import chisel3.experimental.BundleLiterals._
-
-class SwSpec extends AnyFreeSpec with ChiselScalatestTester {
-   "mycpu should work through lw.hex" in {
-     test(new Top("src/hex/sw.hex.txt")) {dut => 
-       while(!dut.io.exit.peek().litToBoolean) {
-          dut.clock.step()
-       } 
-     }
-   }
-}
+@@ -52,5 +58,7 @@ class Core extends Module{
+  printf(p"wb_addr, 0x${Hexadecimal(wb_addr)}\n")
+  printf(p"alu_out: 0x${Hexadecimal(alu_out)}\n")
+  printf(p"wb_data: 0x${Hexadecimal(wb_data)}\n")
++++ 4
+  printf(p"dmem.wen: 0x${Hexadecimal(io.dmem.write_enable)}\n")
+  printf(p"dmem.wdata: 0x${Hexadecimal(io.dmem.write_data)}\n")
++++
+  printf("-----------\n")
+```
+@tab 运行测试
+```bash 
+pc_reg: 0x00000000
+inst: 0x00802303
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   8
+rs2_data: 0x00000000
+wb_addr, 0x06
+alu_out: 0x00000008
+wb_data: 0x406287b3
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令 lw x6, 8(x0)
+pc_reg: 0x00000004
+inst: 0x006302b3
+rs1_addr:   6
+rs1_data: 0x406287b3
+rs2_addr:   6
+rs2_data: 0x406287b3
+wb_addr, 0x05
+alu_out: 0x00000000
+wb_data: 0x00802303
+dmem.wen: 0x0
+dmem.wdata: 0x406287b3
+----------- 对应指令 add x5, x6, x6 
+pc_reg: 0x00000008
+inst: 0x406287b3
+rs1_addr:   5
+rs1_data: 0x00000000
+rs2_addr:   6
+rs2_data: 0x406287b3
+wb_addr, 0x0f
+alu_out: 0x00000000
+wb_data: 0x00802303
+dmem.wen: 0x0
+dmem.wdata: 0x406287b3
+----------- 对应指令 sub x15, x5, x6 
+pc_reg: 0x0000000c
+inst: 0x00602823
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   6
+rs2_data: 0x406287b3
+wb_addr, 0x10
+alu_out: 0x00000006
+wb_data: 0x87b30063
+dmem.wen: 0x1
+dmem.wdata: 0x406287b3
+----------- 对应指令 sw x6, 16(x0)
 ```
 :::
 
