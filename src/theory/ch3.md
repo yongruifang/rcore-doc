@@ -55,5 +55,3 @@ val dataMem = Seq.fill(nWords)(SeqMem(nSets,Vec(wBytes, UInt(8.W))))
 - 有限状态自动机FMS控制各个阶段的行为。
 - 7个状态
 
-## 总结
-针对两个重点模块Core和Cache的工作细节以及实现方式做出介绍

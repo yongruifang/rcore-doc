@@ -15,17 +15,11 @@ headerDepth: 3
 译码器如图所示:
 
 ![译码器](/assets/image/lab3/decoder.png)
-```normal
-Input: Instr_word[31:0]
-Output: 
-    add_op
-    sub_op
-    lw_op
-    sw_op
-    nop
-```
+
 实现代码，完成波形仿真测试。
-指令测试样例：
+:::details 指令测试样例
+:::code-tabs #shell
+@tab 汇编格式
 ```asmatmel
 add x1, x2, x3 : 0x003100b3 b000000_00010_00011_00001_00000_100000 
 sub x0, x5, x6 : 0x40628033 b000000_00101_00110_00000_00000_100010 
@@ -33,27 +27,26 @@ lw x5, 100(x2) : 0x06432283 b100011_00010_00101_00000_00001_100100
 sw x5, 104(x2) : 0x06512423 b101011_00010_00101_00000_00001_101000 
 jal ra, 100    : 0x064000ef b00000110010000000000_00001_1101111 
 ```
+@tab sr/hex/example.hex.txt 
+```txt 
+003100b3
+40628033
+06432283
+06512423
+064000ef
+``` 
+:::
+
 
 ### 2. 寄存器文件的设计
 
 ![寄存器文件](/assets/image/lab3/regfile.png)
 
-32-bit的寄存器 x 32 
-允许两读一写
-- r0固定读出0
-- 输入端口 
-```normal
-rs1, rs2, wb_data, reg_wb, rf_wren
-```
-- 输出端口
-```normal
-rs1_out, rs2_out
-```
-- 寄存器内部保存的初始数值设置为寄存器编号
+需求： 寄存器内部保存的初始数值设置为寄存器编号
 
 测试
-```normal
-rs1=5, rs2=8, wb_data=0x1234, reg_wb=1, rf_wren=1 
+```txt
+令rs1=5, rs2=8, wb_data=0x1234, reg_wb=1, rf_wren=1 
 观察输出波形以及对应寄存器的值
 ```
 
@@ -61,22 +54,34 @@ rs1=5, rs2=8, wb_data=0x1234, reg_wb=1, rf_wren=1
 
 ![指令存储器](/assets/image/lab3/imemory.png)
 
-内存: 32字指令存储器
-地址0存储4条指令。
+内存: 32字指令存储器  
+从地址0起，存储5条指令。
+:::details 指令测试样例
+:::code-tabs #shell
+@tab 汇编格式
 ```asmatmel
-add x1, x2, x3 : 0x003100b3
-sub x0, x5, x6 : 0x40628033
-lw x5, 100(x2) : 0x06432283
-sw x5, 104(x2) : 0x06512423
-jal ra, 100    : 0x064000ef
+add x1, x2, x3 : 0x003100b3 b000000_00010_00011_00001_00000_100000 
+sub x0, x5, x6 : 0x40628033 b000000_00101_00110_00000_00000_100010 
+lw x5, 100(x2) : 0x06432283 b100011_00010_00101_00000_00001_100100 
+sw x5, 104(x2) : 0x06512423 b101011_00010_00101_00000_00001_101000 
+jal ra, 100    : 0x064000ef b00000110010000000000_00001_1101111 
 ```
+@tab sr/hex/example.hex.txt 
+```txt 
+003100b3
+40628033
+06432283
+06512423
+064000ef
+``` 
+:::
+
 - 组合 指令存储器，寄存器文件，译码器。
 
 ![组合模块](/assets/image/lab3/junction.png)
 
 PC初始值为0  
-目标：逐条地取指、译码。  
-观察四条指令的执行过程的波形
+目标：**逐条地取指、译码**， 观察指令的执行过程的波形
 
 ## 步骤
 [b站录屏](https://www.bilibili.com/video/BV1Ef421Z7Te)
@@ -229,6 +234,10 @@ class DecoderSpec extends AnyFreeSpec with ChiselScalatestTester {
   }
 }
 ```
+@tab 运行测试 
+```bash 
+sbt "testOnly circuit.DecoderSpec"
+```
 :::
 
 
@@ -288,6 +297,10 @@ class RegfileSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 }
+```
+@tab 运行测试
+```bash 
+sbt "testOnly circuit.RegfileSpec"
 ```
 :::
 
@@ -351,6 +364,10 @@ class IMemorySpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 }
+```
+@tab 运行测试 
+```bash 
+sbt "testOnly circuit.IMemorySpec"
 ```
 :::
 
@@ -450,7 +467,7 @@ import chisel3.experimental.BundleLiterals._
 
 class JunctionSpec extends AnyFreeSpec with ChiselScalatestTester {
   "test" in {
-    test(new Junction("src/hex/example.hex.txt")) { dut =>
+    test(new Junction("src/hex/example.hex.txt")).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.step(1)
       dut.io.add_op.expect(1.U)
       dut.clock.step(1)
@@ -471,5 +488,17 @@ class JunctionSpec extends AnyFreeSpec with ChiselScalatestTester {
   }
 }
 ```
+@tab 运行测试
+```bash 
+sbt "testOnly circuit.JunctionSpec"
+
+# 生成vcd文件，test_run_dir/test/Junction.vcd
+# 使用gtkwave观测波形
+```
+:::
+
+:::details 波形图观察
+
+![波形图](/assets/image/lab3/junction-vcd.png)
 :::
 

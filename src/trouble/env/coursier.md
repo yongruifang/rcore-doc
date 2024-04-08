@@ -32,6 +32,8 @@ Error downloading https://github.com/coursier/coursier/releases/download/v2.1.8/
 2. [使用Scala CLI设置代理](https://scala-cli.virtuslab.org/docs/guides/power/proxy)
 ```bash
 scala-cli --power config httpProxy.address <代理地址>:<代理端口>
+# 取消配置
+scala-cli --power config httpProxy.address --unset 
 ```
 我的过程
 > 我的代理是<ins>https://172.17.16.1:7890</ins>
