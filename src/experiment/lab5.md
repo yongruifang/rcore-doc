@@ -41,12 +41,15 @@ mx1:    .space  512
 mx2:    .space  512
 mx3:    .space  512
 .text   
-initial:    daddi   r22,    r0,     mx1
+initial:    
+    daddi   r22,    r0,     mx1
     daddi   r23,    r0,     mx2
     daddi   r21,    r0,     mx3
-input:      daddi   r9,     r0,     64
+input:      
+    daddi   r9,     r0,     64
     daddi   r8,     r0,     0
-loop1:      dsll    r11,    r8,     3
+loop1:      
+    dsll    r11,    r8,     3
     dadd    r10,    r11,    r22
     dadd    r11,    r11,    r23
     daddi   r12,    r0,     2
@@ -56,12 +59,16 @@ loop1:      dsll    r11,    r8,     3
     daddi   r8,     r8,     1
     slt     r10,    r8,     r9
     bne     r10,    r0,     loop1
-mul:        addi    r16,    r0,     8
+
+    daddi    r16,    r0,     8
     daddi   r17,    r0,     0
-loop2:      daddi   r18,    r0,     0
-loop3:      daddi   r19,    r0,     0
+loop2:
+    daddi   r18,    r0,     0
+loop3:
+    daddi   r19,    r0,     0
     daddi   r20,    r0,     0
-loop4:      dsll    r8,     r17,    6
+loop4: 
+    dsll    r8,     r17,    6
     dsll    r9,     r19,    3
     dadd    r8,     r8,     r9
     dadd    r8,     r8,     r22
@@ -92,9 +99,16 @@ loop4:      dsll    r8,     r17,    6
 :::
 
 
-1. 通过 **Statistics** 窗口观察 <u>开启BTB前后</u>的统计数据。
-> [!tip]
-> 仅观察 **Branch Taken Stalls** 和 **Branch Misprediction Stalls**
+1. 通过 **Statistics** 窗口观察 <u>开启BTB前后</u> 的统计数据。
+:::tip
+ 仅观察 **Branch Taken Stalls** 和 **Branch Misprediction Stalls**
+
+:::details 截图
+
+![开启前](/assets/image/lab5/mult-stat-1.png)
+
+![开启后](/assets/image/lab5/mult-stat-2.png)
+:::
 
 
 ## 设计使BTB无效的代码
@@ -104,6 +118,8 @@ loop4:      dsll    r8,     r17,    6
 :::details 示例
 **可以构造一个连续出现0和1的数组**  
 遍历数组，<u>以判定元素为0作为跳转条件</u>，使得分支预测器总是无法正确预测下一个分支的方向。
+
+![统计结果](/assets/image/lab5/btb-not-work.png)
 :::code-tabs #shell 
 @tab 伪代码
 ```c:no-line-numbers
@@ -141,6 +157,10 @@ loop:       dsll    r11,    r8,     3                           # 根据计数�
 > 在每次迭代种执行更多的数据操作来减小循环开销的影响。基本思想是把操作对象线性化，在一次迭代中访问线性数据中的一个组，从而减少迭代次数，降低循环开销。
 
 :::details 循环展开
+![开启BTB - 不展开](/assets/image/lab5/mult-stat-2.png)
+
+![开启BTB - 最内层循环展开](/assets/image/lab5/mult-expand.png)
+
 :::code-tabs #shell
 @tab 伪代码
 ```c:no-line-numbers
@@ -167,12 +187,15 @@ mx1:    .space  512
 mx2:    .space  512
 mx3:    .space  512
 .text   
-initial:    daddi   r22,    r0,     mx1
+initial:   
+    daddi   r22,    r0,     mx1
     daddi   r23,    r0,     mx2
     daddi   r21,    r0,     mx3
-input:      daddi   r9,     r0,     64
+input:
+    daddi   r9,     r0,     64
     daddi   r8,     r0,     0
-loop1:      dsll    r11,    r8,     3
+loop1:
+    dsll    r11,    r8,     3
     dadd    r10,    r11,    r22
     dadd    r11,    r11,    r23
     daddi   r12,    r0,     2
@@ -182,10 +205,12 @@ loop1:      dsll    r11,    r8,     3
     daddi   r8,     r8,     1
     slt     r10,    r8,     r9
     bne     r10,    r0,     loop1
-mul:        addi    r16,    r0,     8
+    daddi    r16,    r0,     8
     daddi   r17,    r0,     0
-loop2:      daddi   r18,    r0,     0
-loop3:      daddi   r19,    r0,     0
+loop2:
+    daddi   r18,    r0,     0
+loop3:
+    daddi   r19,    r0,     0
     daddi   r20,    r0,     0
     dsll    r8,     r17,    6
     dsll    r9,     r19,    3
@@ -294,5 +319,5 @@ loop3:      daddi   r19,    r0,     0
 
 
 ::: warning 不宜过度使用
-循环展开带来的优化, 是以大量冗余的代码为交换的。
+循环展开带来的优化, 是以大量冗余的代码为交换的，需要权衡利弊。
 :::
