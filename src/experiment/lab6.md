@@ -16,7 +16,7 @@ headerDepth: 3
 ## 配置步骤
 开发环境的配置，主要涉及RISC-V工具链部分:  
 [b站录屏](https://www.bilibili.com/video/BV1EC411a7fM)
-```bash
+```bash:no-line-numbers
 git clone https://github.com/ucb-bar/riscv-mini.git 
 cd riscv-mini 
 make 
@@ -43,7 +43,8 @@ exit:
 ```
 :::
 ::: info 在exit的循环: 将1写入到mtohost(一个csr寄存器)
-**作用**: 通知仿真器结束仿真（类似于 X86汇编 中的 HLT 指令）。
+**作用**: 通知仿真器结束仿真（类似于 X86汇编 中的 HLT 指令）。  
+**适用**: 特权指令集1.7版本
 :::
 
 ### 2. 编译test.s

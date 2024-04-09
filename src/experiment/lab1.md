@@ -137,7 +137,7 @@ Data Symbol Table
 .data   
 str:        .asciiz "Hello World!"
 CONTROL:    .word32 0x10000
-DATA:       .word32 0x10000
+DATA:       .word32 0x10008
 .text   
 main:       
     lwu     r31,    CONTROL(r0)
@@ -204,6 +204,7 @@ Data Symbol Table
                 DATA = 00000018
 ```
 :::
+![helloworld](/assets/image/lab1/helloworld.png)
 ## 任务2. bubble sort
 - 对一组整型数组进行冒泡排序
 - 要求实现swap函数
@@ -213,30 +214,7 @@ Data Symbol Table
 > 注意: 需要将SP初始化为内存最高地址，否则初始化为0，使得SP-1将会指向0xffffffff，导致超出winmips默认的内存空间。 
 
 ::: info 最后终端的打印结果应该是:
-```bash
-before sort the array is:
-8
-6
-3
-7
-1
-0
-9
-4
-5
-2
-after sort the array is:
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-```
+![终端输出](/assets/image/lab1/sort.png)
 :::
 ::: details 代码实现
 :::code-tabs #shell
