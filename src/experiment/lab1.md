@@ -19,6 +19,7 @@ WinMIPS64官网: `indigo.ie/~mscott/`
 文档下载: `http://indigo.ie/~mscott/winmipstut.docx`  
 
 ## 快速上手
+[下载winmips64](https://indigo.ie/~mscott/winmips64.zip)
 ### 1. 启动与配置
 - 七个子窗口  
     (1) pipeline 流水线：观察指令所在阶段  
