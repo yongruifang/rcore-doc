@@ -17,7 +17,6 @@ headerDepth: 3
 ![译码器](/assets/image/lab3/decoder.png)
 
 实现代码，完成波形仿真测试。
-:::details 指令测试样例
 :::code-tabs #shell
 @tab 汇编格式
 ```asmatmel
@@ -96,6 +95,8 @@ sbt run
 ```
 > 因为chisel-template更新的频率较快，所以提供本次使用的`build.sbt`：
 :::details build.sbt
+:::code-tabs #shell 
+@tab build.sbt
 ```scala 
 // See README.md for license details.
 
