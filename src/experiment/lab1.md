@@ -31,7 +31,7 @@ WinMIPS64官网: `indigo.ie/~mscott/`
 - 重置: <kbd>file > reset MIPS64</kbd>  
 - 架构配置: <kbd>configure > architecture</kbd>
 :::details 配置详情
-```bash
+```bash:no-line-numbers
 code address bus: 10
 data address bus: 10
 FP addition latency: 4 
@@ -67,8 +67,8 @@ main:
     sd      r3, C(r0)
     halt    
 ```
-@tab 语法检查
-```bash 
+@tab 语法检查 
+```bash {2}
 D:\winmips64>asm.exe program\sum.s
 Pass 1 completed with 0 errors
 00000000          .data   
@@ -161,7 +161,7 @@ main:
     ;9, read one byte from DATA, no character echo.
 ```
 @tab 语法检查
-```bash 
+```bash {2}
 D:\winmips64>asm.exe program\echo.s
 Pass 1 completed with 0 errors
 00000000          .data
@@ -365,7 +365,7 @@ fine:
     jr      r31
 ```
 @tab 语法检查
-```bash 
+```bash {2}
 D:\winmips64>asm.exe program\bubble_sort.s
 Pass 1 completed with 0 errors
 00000000          .data

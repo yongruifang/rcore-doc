@@ -44,7 +44,7 @@ jal ra, 100    : 0x064000ef b00000110010000000000_00001_1101111
 需求： 寄存器内部保存的初始数值设置为寄存器编号
 
 测试
-```txt
+```txt:no-line-numbers
 令rs1=5, rs2=8, wb_data=0x1234, reg_wb=1, rf_wren=1 
 观察输出波形以及对应寄存器的值
 ```
@@ -59,11 +59,11 @@ jal ra, 100    : 0x064000ef b00000110010000000000_00001_1101111
 :::code-tabs #shell
 @tab 汇编格式
 ```asmatmel
-add x1, x2, x3 : 0x003100b3 b000000_00010_00011_00001_00000_100000 
-sub x0, x5, x6 : 0x40628033 b000000_00101_00110_00000_00000_100010 
-lw x5, 100(x2) : 0x06432283 b100011_00010_00101_00000_00001_100100 
-sw x5, 104(x2) : 0x06512423 b101011_00010_00101_00000_00001_101000 
-jal ra, 100    : 0x064000ef b00000110010000000000_00001_1101111 
+add x1, x2, x3 
+sub x0, x5, x6
+lw x5, 100(x2) 
+sw x5, 104(x2) 
+jal ra, 100    
 ```
 @tab sr/hex/example.hex.txt 
 ```txt 
@@ -88,7 +88,7 @@ PC初始值为0
 ### 1. 选择build.sbt构建文件
 scala库中与Chisel和Chisel test相关的部分是在构建过程中通过Maven仓库下载的。
 build.sbt文件无需手动编写，官方推荐克隆[chisel-template](https://github.com/chipsalliance/chisel-template)
-```bash
+```bash:no-line-numbers
 git clone https://github.com/chipsalliance/chisel-template.git example
 cd example 
 sbt run 
@@ -97,7 +97,7 @@ sbt run
 :::details build.sbt
 :::code-tabs #shell 
 @tab build.sbt
-```scala 
+```scala {7,14}
 // See README.md for license details.
 
 ThisBuild / scalaVersion := "2.13.12"

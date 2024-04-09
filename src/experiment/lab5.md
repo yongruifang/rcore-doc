@@ -21,7 +21,7 @@ headerDepth: 3
 ## 矩阵乘法及其优化(开启BTB)
 :::code-tabs #shell 
 @tab 伪代码
-```c
+```c:no-line-numbers
 for(int i = 0; i < 8; i ++) {
   for(int j = 0; j < 8; j ++) {
     int local_sum = 0;
@@ -35,59 +35,59 @@ for(int i = 0; i < 8; i ++) {
 
 @tab MIPS
 ```asmatmel
-.data
-str:  .asciiz "the data of matrix 3:\n"
-mx1:   .space 512
-mx2:   .space 512
-mx3:   .space 512
-.text
-initial:   daddi r22,r0,mx1
-daddi r23,r0,mx2
-daddi r21,r0,mx3
-input:     daddi r9,r0,64
-daddi r8,r0,0
-loop1:     dsll r11,r8,3
-dadd r10,r11,r22
-dadd r11,r11,r23
-daddi r12,r0,2
-daddi r13,r0,3
-sd r12,0(r10)
-sd r13,0(r11)
-daddi r8,r8,1
-slt r10,r8,r9
-bne r10,r0,loop1
-mul:       addi r16,r0,8
-daddi r17,r0,0
-loop2:     daddi r18,r0,0
-loop3:     daddi r19,r0,0
-daddi r20,r0,0
-loop4:     dsll r8,r17,6
-dsll r9,r19,3
-dadd r8,r8,r9
-dadd r8,r8,r22
-ld r10,0(r8)
-dsll r8,r19,6
-dsll r9,r18,3
-dadd r8,r8,r9
-dadd r8,r8,r23
-ld r11,0(r8)
-dmul r13,r10,r11
-dadd r20,r20,r13
-daddi r19,r19,1
-slt r8,r19,r16
-bne r8,r0,loop4
-dsll r8,r17,6
-dsll r9,r18,3
-dadd r8,r8,r9
-dadd r8,r8,r21
-sd r20,0(r8)
-daddi r18,r18,1
-slt r8,r18,r16
-bne r8,r0,loop3
-daddi r17,r17,1
-slt r8,r17,r16
-bne r8,r0,loop2
-halt
+.data   
+str:    .asciiz "the data of matrix 3:\n"
+mx1:    .space  512
+mx2:    .space  512
+mx3:    .space  512
+.text   
+initial:    daddi   r22,    r0,     mx1
+    daddi   r23,    r0,     mx2
+    daddi   r21,    r0,     mx3
+input:      daddi   r9,     r0,     64
+    daddi   r8,     r0,     0
+loop1:      dsll    r11,    r8,     3
+    dadd    r10,    r11,    r22
+    dadd    r11,    r11,    r23
+    daddi   r12,    r0,     2
+    daddi   r13,    r0,     3
+    sd      r12,    0(r10)
+    sd      r13,    0(r11)
+    daddi   r8,     r8,     1
+    slt     r10,    r8,     r9
+    bne     r10,    r0,     loop1
+mul:        addi    r16,    r0,     8
+    daddi   r17,    r0,     0
+loop2:      daddi   r18,    r0,     0
+loop3:      daddi   r19,    r0,     0
+    daddi   r20,    r0,     0
+loop4:      dsll    r8,     r17,    6
+    dsll    r9,     r19,    3
+    dadd    r8,     r8,     r9
+    dadd    r8,     r8,     r22
+    ld      r10,    0(r8)
+    dsll    r8,     r19,    6
+    dsll    r9,     r18,    3
+    dadd    r8,     r8,     r9
+    dadd    r8,     r8,     r23
+    ld      r11,    0(r8)
+    dmul    r13,    r10,    r11
+    dadd    r20,    r20,    r13
+    daddi   r19,    r19,    1
+    slt     r8,     r19,    r16
+    bne     r8,     r0,     loop4
+    dsll    r8,     r17,    6
+    dsll    r9,     r18,    3
+    dadd    r8,     r8,     r9
+    dadd    r8,     r8,     r21
+    sd      r20,    0(r8)
+    daddi   r18,    r18,    1
+    slt     r8,     r18,    r16
+    bne     r8,     r0,     loop3
+    daddi   r17,    r17,    1
+    slt     r8,     r17,    r16
+    bne     r8,     r0,     loop2
+    halt    
 ```
 :::
 
@@ -106,7 +106,7 @@ halt
 遍历数组，<u>以判定元素为0作为跳转条件</u>，使得分支预测器总是无法正确预测下一个分支的方向。
 :::code-tabs #shell 
 @tab 伪代码
-```c
+```c:no-line-numbers
 // 交替出现的 0 和 1
 int array[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
 int length = 16;
@@ -116,23 +116,23 @@ for (int i = 0; i < length; i++) {
 ```
 @tab MIPS 
 ```asmatmel
-.data
-array:   .word 0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1
+.data   
+array:  .word   0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
 
-.text
-			daddi r23,r0,array # 数组的地址加载
-			daddi r9,r0,16     # 数组长度
-			daddi r8,r0,0      # 计数器r8 
-loop: dsll r11,r8,3      # 根据计数器得到偏移量
-			dadd r10,r11,r23   # 数组元素地址
-			ld r12,0(r10)      # 取值
-			daddi r8,r8,1      # 计数器自增
-			bne r12,r0,loop    # 元素若不为0的判断
-			slt r10,r8,r9      # 计数器是否小于数组长度
-			bne r10,r0,loop    # 没有越界就继续遍历
-			daddi r17,r0,1     # 辅助(无意义)
-		  
-      halt
+.text   
+    daddi   r23,    r0,     array                               # 数组的地址加载
+    daddi   r9,     r0,     16                                  # 数组长度
+    daddi   r8,     r0,     0                                   # 计数器r8
+loop:       dsll    r11,    r8,     3                           # 根据计数器得到偏移量
+    dadd    r10,    r11,    r23                                 # 数组元素地址
+    ld      r12,    0(r10)                                      # 取值
+    daddi   r8,     r8,     1                                   # 计数器自增
+    bne     r12,    r0,     loop                                # 元素若不为0的判断
+    slt     r10,    r8,     r9                                  # 计数器是否小于数组长度
+    bne     r10,    r0,     loop                                # 没有越界就继续遍历
+    daddi   r17,    r0,     1                                   # 辅助(无意义)
+
+    halt
 ```
 :::
 
@@ -143,7 +143,7 @@ loop: dsll r11,r8,3      # 根据计数器得到偏移量
 :::details 循环展开
 :::code-tabs #shell
 @tab 伪代码
-```c
+```c:no-line-numbers
 for(int i = 0; i < 8; i++) {
   for(int j = 0; j < 8; j++) {
     int local_sum = 0;
@@ -161,134 +161,134 @@ for(int i = 0; i < 8; i++) {
 ```
 @tab MIPS 
 ```asmatmel
-.data
-str:  .asciiz "the data of matrix 3:\n"
-mx1:   .space 512
-mx2:   .space 512
-mx3:   .space 512
-.text
-initial:   daddi r22,r0,mx1
-daddi r23,r0,mx2
-daddi r21,r0,mx3
-input:     daddi r9,r0,64
-daddi r8,r0,0
-loop1:     dsll r11,r8,3
-dadd r10,r11,r22
-dadd r11,r11,r23
-daddi r12,r0,2
-daddi r13,r0,3
-sd r12,0(r10)
-sd r13,0(r11)
-daddi r8,r8,1
-slt r10,r8,r9
-bne r10,r0,loop1
-mul:       addi r16,r0,8
-daddi r17,r0,0
-loop2:     daddi r18,r0,0
-loop3:     daddi r19,r0,0
-daddi r20,r0,0
-dsll r8,r17,6
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r9)
-dsll r10,r19,6
-dsll r11,r18,3
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r9,r19,3
-dadd r9,r8,r9
-dadd r9,r9,r22
-ld r9,0(r8)
-dsll r10,r19,6
-dadd r10,r10,r11
-dadd r10,r10,r23
-ld r10,0(r10)
-dmul r12,r9,r10
-dadd r20,r20,r12
-daddi r19,r19,1
-dsll r8,r17,6
-dsll r9,r18,3
-dadd r8,r8,r9
-dadd r8,r8,r21
-sd r20,0(r8)
-daddi r18,r18,1
-slt r8,r18,r16
-bne r8,r0,loop3
-daddi r17,r17,1
-slt r8,r17,r16
-bne r8,r0,loop2
-halt
+.data   
+str:    .asciiz "the data of matrix 3:\n"
+mx1:    .space  512
+mx2:    .space  512
+mx3:    .space  512
+.text   
+initial:    daddi   r22,    r0,     mx1
+    daddi   r23,    r0,     mx2
+    daddi   r21,    r0,     mx3
+input:      daddi   r9,     r0,     64
+    daddi   r8,     r0,     0
+loop1:      dsll    r11,    r8,     3
+    dadd    r10,    r11,    r22
+    dadd    r11,    r11,    r23
+    daddi   r12,    r0,     2
+    daddi   r13,    r0,     3
+    sd      r12,    0(r10)
+    sd      r13,    0(r11)
+    daddi   r8,     r8,     1
+    slt     r10,    r8,     r9
+    bne     r10,    r0,     loop1
+mul:        addi    r16,    r0,     8
+    daddi   r17,    r0,     0
+loop2:      daddi   r18,    r0,     0
+loop3:      daddi   r19,    r0,     0
+    daddi   r20,    r0,     0
+    dsll    r8,     r17,    6
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r9)
+    dsll    r10,    r19,    6
+    dsll    r11,    r18,    3
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r9,     r19,    3
+    dadd    r9,     r8,     r9
+    dadd    r9,     r9,     r22
+    ld      r9,     0(r8)
+    dsll    r10,    r19,    6
+    dadd    r10,    r10,    r11
+    dadd    r10,    r10,    r23
+    ld      r10,    0(r10)
+    dmul    r12,    r9,     r10
+    dadd    r20,    r20,    r12
+    daddi   r19,    r19,    1
+    dsll    r8,     r17,    6
+    dsll    r9,     r18,    3
+    dadd    r8,     r8,     r9
+    dadd    r8,     r8,     r21
+    sd      r20,    0(r8)
+    daddi   r18,    r18,    1
+    slt     r8,     r18,    r16
+    bne     r8,     r0,     loop3
+    daddi   r17,    r17,    1
+    slt     r8,     r17,    r16
+    bne     r8,     r0,     loop2
+    halt    
 ```
 :::
 

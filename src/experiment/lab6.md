@@ -20,10 +20,7 @@ headerDepth: 3
 git clone https://github.com/ucb-bar/riscv-mini.git 
 cd riscv-mini 
 make 
-cd generated-src/
-ls 
 make verilator 
-riscv32-unknown-elf-gcc --version
 ```
 
 ## 程序编译和运行
@@ -43,7 +40,6 @@ exit:
     csrw mtohost, 1
     j exit
     .end
-
 ```
 :::
 ::: info 在exit的循环: 将1写入到mtohost(一个csr寄存器)
@@ -66,7 +62,7 @@ riscv32-unknown-elf-objdump -S test
 - 需求：转换为<u> 宽度为16字节的hex文件 </u> 。
 - 用法：`elf2hex <width> <depth> <elf_file>`
 ```bash 
-elf2hex 16 4096 test > test.hex 
+elf2hex --bit-width 16 --input test --output test.hex
 ./VTile ./test.hex test.vcd 
 ```
 
@@ -109,11 +105,9 @@ elf2hex 16 4096 factorial > factorial.hex
 
 ## 波形观察, 探索指令执行过程  
 ### 1. 取指阶段
-根据PC值去除将要执行的指令。  
-首先通过一个多路选择器根据情况选择将要执行的下一条指令地址，  
-随后访问地址Cache获取对应地址中的指令，  
-若流水线正常执行未发生分支与异常等情况便可将读取到的指令放入到Fetch/Execute流水线寄存器中给下一个阶段使用，  
-否则用空指令冲刷流水线产生一个空泡。  
+- 根据PC值取出将要执行的指令。  
+通过多路选择器Mux, 选择将要执行的下一条指令地址，获取对应地址中的指令，  
+若流水线正常执行未发生分支与异常等情况, 便可将读取到的指令放入到 **Fetch/Execute流水线寄存器** 中, 否则用空指令产生一个停顿。  
 
 :::details 对应的Chisel代码
 ```scala 
@@ -149,14 +143,18 @@ elf2hex 16 4096 factorial > factorial.hex
 ```
 :::
 
-使用GTKWave打开vcd，观察一条特定指令的执行过程。  
-以 li t2, 2为例， li指令其实是一条伪指令，用于加载立即数。  
-编译器会根据立即数的大小将其转化为一条或两条等价功能的指令来执行。  
-在这里li t2,2与addi x7，x0，2等价。这条li指令位于0x204的内存地址上，  
-从下面的波形图可以观察到icache的req.addr端口的输入即为next_pc中的数值。  
-若cache命中则可以直接在下一个时钟周期中取得对应的指令，若未命中则会产生阻塞直至从内存中读取完成。  
-从下图中可以观察到cache命中，读取出了指令00200393，  
-并在下一个周期将其写入到了fe_reg_inst寄存器中以供执行阶段使用。
+
+#### 使用GTKWave打开vcd，观察一条特定指令的执行过程
+以 `li t2, 2`为例， `li` 指令是一条伪指令，用于加载立即数。  
+**编译器会根据立即数的大小, 将其转化为一条或两条等价功能的指令来执行。**
+> 在这里li t2,2与addi x7，x0，2等价。这条li指令位于0x204的内存地址上，  
+
+- 从波形图可以观察到icache的req.addr端口的输入, 为next_pc中的数值。  
+- 若cache命中则可以直接在下一个时钟周期中取得对应的指令  
+  若未命中则会产生阻塞直至从内存中读取完成。  
+
+- 从波形图中观察到cache命中，读取出了指令`0x00200393`，  
+并在下个周期写入 **fe_reg_inst** 寄存器中, 以供执行阶段使用。
 
 ### 2. 执行阶段
 在该阶段当中需要完成指令译码、准备操作数(从regfile中读取或产生立即数)、指令执行以及访存(访存指令)。  

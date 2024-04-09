@@ -85,7 +85,7 @@ zero:
     halt    
 ```
 @tab 提示溢出
-```asmatmel
+```asmatmel {6,54-65}
 .data   
 CONTROL:    .word32 0x10000
 DATA:       .word32 0x10008

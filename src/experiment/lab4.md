@@ -12,13 +12,10 @@ headerDepth: 3
 - 给定一段代码，运行，观察统计信息，找出冒险。
 - 一边调整，一边观察反馈。  
 - [x] enable forwarding: 开启
-
-使用perf记录 时间统计  
-调整指令，避免连续乘法之间的阻塞  
 - 代码： 实现两个矩阵相加
 :::code-tabs #shell 
 @tab 伪代码
-```c
+```c:no-line-numbers
 for(int i = 0; i < 4; i ++) {
     for(int j = 0; j < 4; j ++) {
         C[i][j] = A[i][j] + B[i][j];
@@ -78,15 +75,8 @@ exit1:
 1. 给出一段代码，有意义的代码（比如矩阵加法），带有明显的数据相关，要求通过流水线执行来发现数据相关处，记录统计信息。
 2. 对初始代码进行指令序列的调整，以获得性能提升，记录统计信息。
 3. 启动forwarding功能以获得性能提升，记录统计信息。
-4. 用循环中的连续乘法做功能冲突的展示，然后将后续无关指令填充到它们之间，实现优化。
-5. 附加实验：用perf记录x86中的数据相关于指令序列调整前后的事件统计（stall等）
-
-### 评分标准  
-
-初始代码准备10分   
-指令序列调整30分   
-forwarding完成记录并解释正确，得20分  
-指令调整后，结构相关得到解决，得30分  
+4. 用循环中的连续除法做功能冲突的展示，然后将后续无关指令填充到它们之间，实现优化。
+5. 附加实验：用perf记录x86中的**数据冒险**在指令序列调整前后的事件统计（stall等）
 
 
 ## 矩阵相加
@@ -97,13 +87,13 @@ forwarding完成记录并解释正确，得20分
 ### 调整指令序列
 :::code-tabs #shell 
 @tab 1 
-```asmatmel
+```asmatmel:no-line-numbers
 ld r16, LEN(r0)
 slt r8, r17, r16 
 ```
 
 @tab 2 
-```asmatmel
+```asmatmel:no-line-numbers
 ld r9, 0(r0)
 ld r10, 0(r10)
 daddi r12, r9, r10 
@@ -223,7 +213,7 @@ j = j + 1;
 c = c / d;
 ```
 @tab divide-2.s
-```asmatmel
+```asmatmel {17,38}
 .data   
 a:  .word   12
 b:  .word   3
