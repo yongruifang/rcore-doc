@@ -1,6 +1,6 @@
 ---
 title: 1. MIPS lab
-icon: tag
+icon: unlock
 headerDepth: 3
 ---
 ## 目标

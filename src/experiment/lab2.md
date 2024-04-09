@@ -1,6 +1,6 @@
 ---
 title: 2. MIPS模拟乘法器
-icon: tag
+icon: calculator
 headerDepth: 3
 ---
 ## 目标

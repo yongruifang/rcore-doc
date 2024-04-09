@@ -1,6 +1,6 @@
 ---
 title: 7. riscv-mini新增指令
-icon: tag
+icon: circle-plus
 headerDepth: 3
 ---
 ## 目标

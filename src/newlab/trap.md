@@ -1,5 +1,5 @@
 ---
 title: 3. trap-lab
-icon: tag
+icon: shuffle
 headerDepth: 3
 ---

@@ -1,6 +1,6 @@
 ---
 title: 9. 并行-存储体系实验
-icon: tag
+icon: sd-card
 headerDepth: 3
 ---
 ## 目标

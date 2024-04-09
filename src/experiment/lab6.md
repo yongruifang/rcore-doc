@@ -1,6 +1,6 @@
 ---
 title: 6. riscv-mini运行观察
-icon: tag
+icon: eye
 headerDepth: 3
 ---
 ## 目标

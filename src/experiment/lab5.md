@@ -1,6 +1,6 @@
 ---
 title: 5. 控制冒险和分支预测
-icon: tag
+icon: radiation
 headerDepth: 3
 ---
 

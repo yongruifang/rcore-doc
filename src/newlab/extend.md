@@ -1,5 +1,5 @@
 ---
 title: 3. extend-lab
-icon: tag
+icon: square-plus
 headerDepth: 3
 ---

@@ -1,6 +1,6 @@
 ---
 title: 3. (Chisel)取指令和译码设计 
-icon: tag
+icon: shapes
 headerDepth: 3
 ---
 ## 目标

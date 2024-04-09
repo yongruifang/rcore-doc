@@ -1,6 +1,6 @@
 ---
 title: 4. MIPS流水线与冒险
-icon: tag
+icon: bars-staggered
 headerDepth: 3
 ---
 ## 目标

@@ -1,5 +1,5 @@
 ---
 title: 2. 5-stage
-icon: tag
+icon: circle-nodes
 headerDepth: 3
 ---

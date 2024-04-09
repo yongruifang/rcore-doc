@@ -10,7 +10,7 @@ export default hopeTheme({
     url: "https://yongruifang.netlify.app",
   },
 
-  iconAssets: "fontawesome-with-brands",
+  iconAssets: "fontawesome",
 
   logo: "/logo.svg",
 

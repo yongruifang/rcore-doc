@@ -1,6 +1,6 @@
 ---
 title: 1. 单周期实现
-icon: tag
+icon: circle-dot
 headerDepth: 3
 ---
 
