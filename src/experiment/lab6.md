@@ -61,7 +61,7 @@ riscv32-unknown-elf-objdump -S test
 
 - 工具：**elf2hex**
 - 需求：转换为<u> 宽度为16字节的hex文件 </u> 。
-- 用法：`elf2hex <width> <depth> <elf_file>`
+- 用法：`elf2hex [-h] --bit-width BIT_WIDTH --input INPUT.ELF [--output OUTPUT.HEX]`
 ```bash 
 elf2hex --bit-width 16 --input test --output test.hex
 ./VTile ./test.hex test.vcd 

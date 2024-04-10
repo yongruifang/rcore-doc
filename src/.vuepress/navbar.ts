@@ -94,16 +94,45 @@ export default navbar([
         icon: "hashtag",
         link: "/theory/ch6",
       },
+      {
+        text: "ch6",
+        icon: "hashtag",
+        link: "/theory/ch7",
+      },
     ],
   },
   {
     text: "参考",
     icon: "book",
     link: "/reference/",
+    children: [
+      {
+        "text": "学习材料",
+        "icon": "hashtag",
+        "link": "/reference/"
+      }
+    ]
   },
   {
     text: "常见问题",
     icon: "question",
     link: "/trouble/",
+    children: [
+      {
+        "text": "常见问题",
+        "icon": "hashtag",
+        "link": "/trouble/",
+      }, 
+      {
+        "text": "安装Scala",
+        "icon": "hashtag",
+        "link": "/trouble/coursier",
+      }, 
+      {
+        "text": "安装工具链",
+        "icon": "hashtag",
+        "link": "/trouble/riscv-toolchain",
+      }, 
+    ]
   },
 ]);

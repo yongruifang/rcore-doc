@@ -1,5 +1,6 @@
 ---
 title: 使用Coursier安装Scala
+icon: wrench
 ---
 
 ## Coursier代理设置
