@@ -14,9 +14,11 @@ headerDepth: 3
 3. 编写完整的sort程序
 
 ## 软件介绍
-WinMIPS64官网: `indigo.ie/~mscott/`  
-软件下载: `indigo.ie/~mscott/winmips64.zip`  
-文档下载: `http://indigo.ie/~mscott/winmipstut.docx`  
+|winmips64 | link |
+|--|:--|
+|主页 | [indigo.ie/~mscott/](indigo.ie/~mscott/)  |
+|压缩包 | [indigo.ie/~mscott/winmips64.zip](indigo.ie/~mscott/winmips64.zip)  |
+| 文档 | [indigo.ie/~mscott/winmipstut.docx](http://indigo.ie/~mscott/winmipstut.docx)  |
 
 ## 快速上手
 [下载winmips64](https://indigo.ie/~mscott/winmips64.zip)
