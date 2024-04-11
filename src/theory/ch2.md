@@ -1,6 +1,8 @@
 ---
 title: 2. Chisel的基本语法
 icon: hashtag
+description: 介绍Chisel的基础语法
+tag: chisel
 ---
 ## 1. Chisel位值
 - UInt

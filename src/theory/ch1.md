@@ -1,6 +1,8 @@
 ---
 title: 1. Scala的基础语法
 icon: hashtag
+description: 介绍Scala的基础语法
+tag: scala
 ---
 目的: 了解使用Chisel所需要的基础知识
 

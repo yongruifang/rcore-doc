@@ -1,6 +1,8 @@
 ---
 title: 使用Coursier安装Scala
 icon: wrench
+description: 使用Coursier安装Scala的注意事项
+tag: [coursier, scala, chisel, sbt]
 ---
 
 ## Coursier代理设置

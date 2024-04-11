@@ -1,6 +1,8 @@
 ---
 title: 4. 片上内存
 icon: hashtag
+description: 片上内存
+tag: riscv
 ---
 ## IO接口
 在riscv-mini中，icache模块和dcache模块通过AXI4总线协议连接到内存模块。

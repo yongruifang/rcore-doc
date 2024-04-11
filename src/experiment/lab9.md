@@ -2,6 +2,8 @@
 title: 9. 并行-存储体系实验
 icon: sd-card
 headerDepth: 3
+description: 掌握多核处理器的pthread编程
+tag: [pthread, SMP]
 ---
 ## 目标
 - 掌握多核处理器的pthread编程

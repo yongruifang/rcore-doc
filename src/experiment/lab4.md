@@ -1,7 +1,9 @@
 ---
 title: 4. MIPS流水线与冒险
 icon: bars-staggered
-headerDepth: 3
+headerDepth: 3 
+description: winmips实现了五级流水线，在模拟器上直观观测五级流水线的执行细节，了解流水线冒险。
+tag: mips 
 ---
 ## 目标
 1. 了解五级流水线

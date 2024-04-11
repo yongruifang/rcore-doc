@@ -1,6 +1,8 @@
 ---
 title: 9. 流水线
 icon: hashtag
+description: 流水线
+tag: riscv
 ---
 
 使用基于寄存器的时钟同步电路。

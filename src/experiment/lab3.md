@@ -2,6 +2,8 @@
 title: 3. (Chisel)取指令和译码设计 
 icon: shapes
 headerDepth: 3
+description: chisel程序设计，初步入门，设计一个模块化的简单电路(实现取指和译码)
+tag: chisel
 ---
 ## 目标
 1. 设计一个连续取指+译指的电路

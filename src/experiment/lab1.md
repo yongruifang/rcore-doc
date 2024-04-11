@@ -2,6 +2,8 @@
 title: 1. MIPS lab
 icon: unlock
 headerDepth: 3
+description: Winmips64是一款用于教学的MIPS模拟器，了解这个软件的基本功能和使用方法
+tag: mips
 ---
 ## 目标
 - 了解WinMIPS64的基本功能和作用

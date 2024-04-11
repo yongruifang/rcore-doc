@@ -1,6 +1,8 @@
 ---
 title: 学习材料
 icon: list
+description: 罗列有用的学习资料
+tag: [chisel, scala, riscv]
 ---
 
 ## <HopeIcon icon="/assets/image/scala.svg" size="1.5rem" />Scala

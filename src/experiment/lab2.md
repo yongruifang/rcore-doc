@@ -2,6 +2,8 @@
 title: 2. MIPS模拟乘法器
 icon: calculator
 headerDepth: 3
+description: MIPS实验设计，写一个乘法程序
+tag: mips
 ---
 ## 目标
 1. 使用加法设计一个不检测溢出的乘法器

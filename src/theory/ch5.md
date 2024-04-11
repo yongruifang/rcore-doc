@@ -1,6 +1,8 @@
 ---
 title: 5. Uart接口
 icon: hashtag
+description: uart接口
+tag: riscv
 ---
 异步串行收发协议
 两根数据线实现两个设备之间的全双工通信。

@@ -1,6 +1,8 @@
 ---
 title: 8. 单周期实现
 icon: hashtag
+description: 单周期
+tag: riscv
 ---
 
 # 指令集模块化。

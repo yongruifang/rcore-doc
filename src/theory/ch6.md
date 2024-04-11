@@ -1,6 +1,8 @@
 ---
 title: 6. 多核扩展
 icon: hashtag
+description: 多核扩展
+tag: riscv
 ---
 - 每个核心拥有独立的icache以及dcache.
 但使用共同的外设以及片上内存。

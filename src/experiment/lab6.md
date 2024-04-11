@@ -2,6 +2,12 @@
 title: 6. riscv-mini运行观察
 icon: eye
 headerDepth: 3
+description: riscv-mini运行观察，通过gtkwave观测波形图，验证指令执行的细节。
+tag: [riscv-mini, chisel]
+head: 
+  - - meta
+    - name: keywords
+      content: riscv-mini运行观察, 通过波形图观测三级流水线的执行细节，验证流水线中的部分控制信号，对riscv-mini构建初步且直接的认识，有助于后续更加深入的学习riscv处理器。
 ---
 ## 目标
 - riscv-mini架构和Chisel设计

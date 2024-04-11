@@ -1,6 +1,8 @@
 ---
 title: 7. 五阶段
 icon: hashtag
+description: 五级流水线
+tag: riscv
 ---
 
 ## 1. 取指令

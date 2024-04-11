@@ -1,6 +1,8 @@
 ---
 title: 3. RISC-V与riscv-mini
 icon: hashtag
+description: 介绍Riscv和riscv-mini项目
+tag: [riscv, riscv-mini]
 ---
 ## 1. RISC-V指令集
 始于2010年，诞生于加州大学伯克利分校。

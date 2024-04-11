@@ -2,6 +2,8 @@
 title: 1. 单周期实现
 icon: circle-dot
 headerDepth: 3
+description: 单周期实现
+tag: [riscv, chisel]
 ---
 
 :::details 初始化

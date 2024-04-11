@@ -2,6 +2,8 @@
 title: 5. 控制冒险和分支预测
 icon: radiation
 headerDepth: 3
+description: 深入了解MIPS中的控制冒险和分支预测，对流水线执行的优化进行学习
+tag: mips
 ---
 
 ## 目标
