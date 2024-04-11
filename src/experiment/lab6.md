@@ -329,25 +329,27 @@ riscv-mini采用三级流水线，
 ![数据通路-执行阶段](/assets/image/lab6/diagram-execute.png =300x)
 ### 2. 执行阶段
 
-需要完成: 
+基本任务: 
 1. 指令译码  
 2. 准备操作数(从regfile中读取或产生立即数) 
 3. 指令执行以及访存(访存指令)。  
-:::details 该阶段的数据通路
-1. 根据需要执行的指令通过立即数生成单元以及访问寄存器文件获得执行阶段所需要使用的操作数作为ALU的输入。
-2. 具体的输入由图中的多个多路选择器进行选择，可能为寄存器文件中读取到的数值、立即数、PC或者由处于下一个阶段的指令前递来的数值。  
-3. 若为分支指令则由BrCond模块进行分支判断，若需要分支则下一条指令的PC地址为分支指令的目标地址。
-:::
+
+处理过程: 
+1. 指令译码, 通过立即数生成单元, 以及访问寄存器文件获得操作数，用来作为ALU的输入。
+2. ALU具体的输入由多个 多路选择器 做出选择，
+ > 可能来自寄存器、或立即数、或PC、或 forwaring (来自EXE/WB流水线寄存器中的数值)。  
+3. 分支指令由BrCond模块进行判断，若需要分支，则下一条指令的PC地址为分支指令的目标地址。
 
 
 :::details 对应的Chisel代码
-1. 将取指阶段得到的指令传给控制单元获得该指令的控制信号
-2. 访问寄存器文件读取需要的操作数
-3. 通过立即数生成单元获得立即数。
-4. 对ALU的输入数据做出选择，来源可能为立即数、从寄存器文件中读取到的数据或者处于EXE/WB流水线寄存器中的数据（前递）
-5. 同时判断该指令是否产生分支以及使用计算出的地址访问数据cache进行访存操作。
-6. 若流水线正常执行则将该阶段产生的数据放入到EXE/WB流水线寄存器中供给下一个阶段使用，反之冲刷流水线产生气泡或者停顿流水线。
-```scala 
+1. 将指令传给控制单元, 以读取相应的控制信号
+2. 将相应寄存器号传给寄存器文件, 以读取需要的操作数
+3. 指令传给立即数生成单元, 以读取需要的立即数。
+4. 对ALU的输入数据做出选择
+5. 判断该指令是否产生分支
+6. 对于lw和sw指令，使用计算出的地址访问数据cache进行访存操作。
+7. 正常情况，产生的数据放入到EXE/WB流水线寄存器。
+```scala{2,8-9,12-13,23-25,35-42,53-56}
 /** **** Execute *****/
   io.ctrl.inst := fe_reg.inst
 
@@ -415,34 +417,47 @@ riscv-mini采用三级流水线，
 ```
 :::
 
-不妨以第三条指令为观察对象 (快照)- `li t7, 2`  
-> li是伪指令，等价于指令addi x7,x0,2
+仍然以第二条指令为观察对象 (快照)- `li t2, 2`  
+> li是伪指令，等价于指令 `addi x7,x0,2`
 
-1. 产生立即数2，使用ALU将立即数与从x0寄存器读出的数值相加。
+- 操作数分别来自立即数x0寄存器，立即数生成单元。
 
-2. 在波形图中观察验证: 
-- 立即数生成单元(immGen)、控制单元(ctrl)的输入均为取指阶段取出的指令fe_reg_inst。
-- 立即数生成单元根据指令译码之后给出对应的立即数0x02，同时寄存器文件也给出了x0寄存器读取的结果(x0寄存器始终为0)。
-- alu中以寄存器读取的结果以及立即数作为输入，根据控制信号将其相加得到结果0x02，并将结果写入到流水线寄存器ew_reg_alu中以供写回阶段使用。  
+- 在波形图中观察验证: 
+1. 来自取指阶段的指令(fe_reg_inst)传递给立即数生成单元(immGen)、控制单元(ctrl)。
+2. immGen给出立即数0x02，寄存器文件给出x0的数值。
+3. ALU中以x0的值以及0x02作为输入，相加得到结果0x02 
+4. 在下个时钟周期，流水线寄存器ew_reg_alu的值为ALU的结果0x02。  
+
+**该指令所在内存地址：<font color="red">0x204</font>**
 :::details 波形图
+![指令li t2,2执行阶段](/assets/image/lab6/vcd-exe-1.png)
+- [x] `fe_reg_inst = 0x00200393 `
+- [x] `io_ctrl_inst = 0x00200393` 
+- [x] `io_inst = 0x00200393 `, immGen的指令输入
+- [x] `immgen_io_out =  2` , immGen的立即数输出
+- [x] `io_out = 2` , ALU的输出
+
+![下一时钟周期](/assets/image/lab6/vcd-exe-2.png)
+- [x] `ew_reg_alu = 2`
 :::
 
 
 ![数据通路-写回阶段](/assets/image/lab6/diagram-writeback.png =x300)
 ### 3. 写回阶段 
 
-1. 将指令执行的结果写回到寄存器中。  
-- 根据指令类型将对应的结果写入到寄存器文件当中，  
-- 若为访存指令则在该阶段获得防存的结果并提取需要的位将其写回。  
-:::details 该阶段的数据通路
-:::
-2. 从数据Cache获得读取到的数据并根据指令类型提取需要的位。
-3. 同时CSR的访问也在该阶段进行。
-4. 据控制信号将需要的数据写回到寄存器文件当中。  
-
+基本任务:  将在执行阶段产生的结果回写到寄存器中。  
+> 根据指令类型, 选择对应的结果写入，  
+> 对于LW指令，需要访问内存获取数据 dcache 
+> 回写CSR寄存器 
+> 回写寄存器文件  
 
 :::details 对应的Chisel代码
-```scala 
+处理过程:  
+1. 从`dcache`读取数据
+2. 根据指令类型提取需要的位。
+3. 同时CSR的访问也在该阶段进行。
+4. 根据控制信号，将需要的数据写回到寄存器文件当中。  
+```scala{1,15,33,36-38} 
 // Load
   val loffset = (ew_reg.alu(1) << 4.U).asUInt | (ew_reg.alu(0) << 3.U).asUInt
   val lshift = io.dcache.resp.bits.data >> loffset
@@ -488,67 +503,231 @@ riscv-mini采用三级流水线，
 ```
 :::
 
-对于li x7, 2（即addi x7,x0,2）指令，
-需要将ALU计算出的结果0x02写入到x7寄存器当中。  
+对于`li t2, 2`（即`addi x7,x0,2`）指令，
+在写回阶段将0x02写入到x7寄存器当中。  
 - 从波形图中观察验证
-1. 在上一阶段执行完成得到0x02并将结果写入到流水线寄存器ew_reg_alu
-2. 同时寄存器文件的写地址信号已经为07，且写信号为高，  
-3. 在下一个时钟周期将会发现0x02已经被成功写入到x7寄存器当中。  
+1. 寄存器文件的写地址信号为07，且写信号有效位为1，  
+2. 在下个时钟周期, 0x02将被成功写入到x7寄存器当中。  
 :::details 波形图
+![li t2, 2写回阶段](/assets/image/lab6/vcd-wb-1.png)
+- [x] 寄存器文件的写地址信号为07，且写信号有效位为1，  
+
+![下个时钟周期](/assets/image/lab6/vcd-wb-2.png)
+
+- [x] 0x02将被成功写入到x7寄存器当中。  
+
 :::
 
-## 解释函数传参过程 
-解释上述C代码中factorial(10)函数的参数10传入寄存器的过程   
-  
-1. 从汇编程序看，程序开始时首先通过addi指令偏移了栈指针，申请了32字节的栈空间，  
-2. 通过两条sw指令将寄存器ra和s0的值保存在栈的指定位置，  
-> 其中寄存器ra是用于保存函数返回地址的，s0的作用则是存放需要保存的数据。  
-3. 将这两个寄存器值保存到堆栈即是在完成我们常说的在函数调用前保存现场的操作。  
+## 观察factorial的传参 
+### 分析[factorial(10)](#_1-编写factorial-c) 的过程   
+:::details 观察汇编代码
+1. 首先addi指令偏移了栈指针，申请了32字节的栈空间，  
+2. 两条sw指令将ra和s0的值保存在栈空间的指定位置，  
+> 其中ra是用于保存函数返回地址的，s0则是存放需要保存的数据。  
+> 将这两个寄存器值保存到堆栈即是在完成我们常说的在函数调用前保存现场的操作。  
 
-我们要观察的factorial（）函数第一次调用时参数10的传入是在哪条指令进行的？
-> 在li a0,10 
-
-- 在跳转到factorial函数前将参数10传到a0（x10）寄存器中，  
+3. 我们要观察的factorial（）函数第一次调用时参数10的传入是在哪条指令进行的？  
+在 **`li a0,10 `** 
+> 在跳转到factorial函数前将参数10传到a0（x10）寄存器中，  
 > 按照RISC-V的规范约定，函数的参数传递可以使用寄存器a0~a7，这里factoria函数只有一个参数，  所以使用a0进行参数传递。
+:::code-tabs #factorial 
+@tab factorial
+```asmatmel{2-4,6-7}
+00000200 <main>:
+ 200:   fe010113                addi    sp,sp,-32
+ 204:   00112e23                sw      ra,28(sp)
+ 208:   00812c23                sw      s0,24(sp)
+ 20c:   02010413                addi    s0,sp,32
+ 210:   00a00513                li      a0,10
+ 214:   00c000ef                jal     220 <factorial>
+ 218:   fea42623                sw      a0,-20(s0)
+ 21c:   064000ef                jal     280 <exit>
 
-**重点观察li a0,10指令，该指令对应的PC地址为0x210。**
+00000220 <factorial>:
+ 220:   fe010113                addi    sp,sp,-32
+ 224:   00112e23                sw      ra,28(sp)
+ 228:   00812c23                sw      s0,24(sp)
+ 22c:   02010413                addi    s0,sp,32
+ 230:   fea42623                sw      a0,-20(s0)
+ 234:   fec42703                lw      a4,-20(s0)
+ 238:   00100793                li      a5,1
+ 23c:   00e7c663                blt     a5,a4,248 <factorial+0x28>
+ 240:   00100793                li      a5,1
+ 244:   0280006f                j       26c <factorial+0x4c>
+ 248:   fec42783                lw      a5,-20(s0)
+ 24c:   fff78793                addi    a5,a5,-1
+ 250:   00078513                mv      a0,a5
+ 254:   fcdff0ef                jal     220 <factorial>
+ 258:   00050793                mv      a5,a0
+ 25c:   fec42583                lw      a1,-20(s0)
+ 260:   00078513                mv      a0,a5
+ 264:   030000ef                jal     294 <__mulsi3>
+ 268:   00050793                mv      a5,a0
+ 26c:   00078513                mv      a0,a5
+ 270:   01c12083                lw      ra,28(sp)
+ 274:   01812403                lw      s0,24(sp)
+ 278:   02010113                addi    sp,sp,32
+ 27c:   00008067                ret
 
-- 从波形图中观察验证
-1. icache的req.addr端口与next_pc相等，  
-> 若cache命中的情况下，在下一个周期next_pc的值装入PC的同时，就能从icache中取出对应的指令。  
-2. PC寄存器为0x210时，由于cache未命中，PC的值在后续三个周期保持不变直至成功取出指令00A00513。  
-3. 指令在下一个时钟周期被传递到执行阶段的流水寄存器fe_inst，  
-4. 同时传入立即数生成单元和控制单元作为输入，即immGen_io_inst和io_inst。  
-5. 各执行单元对输入的指令进行解析，提取指定位段的数据，执行相应的操作。
+00000280 <exit>:
+ 280:   ff010113                addi    sp,sp,-16
+ 284:   00812623                sw      s0,12(sp)
+ 288:   01010413                addi    s0,sp,16
+ 28c:   7800d073                csrwi   mtohost,1
+ 290:   ffdff06f                j       28c <exit+0xc>
+
+00000294 <__mulsi3>:
+ 294:   00050613                mv      a2,a0
+ 298:   00000513                li      a0,0
+ 29c:   0015f693                andi    a3,a1,1
+ 2a0:   00068463                beqz    a3,2a8 <__mulsi3+0x14>
+ 2a4:   00c50533                add     a0,a0,a2
+ 2a8:   0015d593                srli    a1,a1,0x1
+ 2ac:   00161613                slli    a2,a2,0x1
+ 2b0:   fe0596e3                bnez    a1,29c <__mulsi3+0x8>
+ 2b4:   00008067                ret
+```
+:::
+  
+
+### 观察指令缓存机制  
+**从波形图中观察验证:**  
+1. `icache的req.addr`端口与`next_pc`相等，  
+> 当next_pc命中缓存，下个周期next_pc的值装入PC的同时，就能从icache中取出对应的指令。  
+> 否则，next_pc的值装入PC之后，并不能立即读到指令  
+> 当`cache缺失`，则需要访问内存，这个过程称为`refill`
+2. `refill_buf_0` , 和 `refill_buf_1`是指令缓存的位置。 
+3. 写缓存：停顿信号保持三个周期 (这期间注意cache模块的状态跳转)
+> 状态变化 sReadCache x 1 clock -> sRefill x 2 clock
+4. 缓存的不命中：
+> 流水线停顿信号保持四个周期，访问内存，用于后续刷新缓存  
+> 之后的一个时钟周期短暂恢复流水线，更新icache的请求地址  
+> 重新停顿，同时fe_reg_inst更新，启动上条指令的执行阶段。  
+> 在停顿期间进行写缓存, 刷新缓存
+:::details 波形图验证
+![写缓存观察](/assets/image/lab6/vcd-icache-buf.png)
+- [x] 写缓存：停顿信号保持三个周期
+  - [x] 状态变化 sReadCache x 1 -> sRefill x 2
+  - [x] `refill_buf_0` , 和 `refill_buf_1`缓存后续的四条指令。 
+- [x] 之后的一个时钟周期, icache输出next_pc对应的指令。流水线恢复正常
+
+![缓存缺失-访问内存](/assets/image/lab6/vcd-icache-miss.png)
+- [x] 发生`icache缺失`后： 停顿信号保持四个周期
+  - [x] 停顿是为了进行内存的访问，用于后续的缓存刷新  
+  - [x] 状态变化 sReadCache x1 -> sIdle x3, 
+- [x] 之后的一个时钟周期暂时恢复流水线
+  - [x] 更新icache_req.bits_addr为next_pc，
+  - [x] icache_req.valid 为1 
+  - [x] 此时refill_buf还没有变化
+
+![缓存缺失-刷新缓存](/assets/image/lab6/vcd-icache-refresh.png)
+- [x] 停顿信号继续生效三个周期,访存得到的数据将用于刷新缓存
+  - [x] fe_reg_inst更新，启动上条指令的执行阶段
+  - [x] icache的状态变化：sReadCache x 1 -> sRefill x 2，这是在写缓存的结果
+  - [x] `refill_buf_0` , 和 `refill_buf_1`缓存后续的四条指令。  
+- [x] 之后的一个时钟周期, icache输出next_pc对应的指令。流水线恢复正常
+:::
 
 
-- 其中Io_ctrl_A_sel，Io_ctrl_B_sel，Io_ctrl_imm_sel和Io_ctrl_alu_op为控制单元经过指令译码之后得到的部分控制信号，  
-I
-> o_ctrl_A_sel和Io_ctrl_B_sel信号表示输入alu的操作数来源，  
-> Io_ctrl_imm_sel表示立即数格式，Io_ctrl_alu_op表示alu需要进行的操作。  
+### 观察控制信号的变化
 
-从波形图上观察验证，
-- 在取得00A00513指令输入后，经过译码，这些控制信号的输出分别为：  
+控制单元经过指令译码之后得到的部分控制信号，  
+1. `io_ctrl_a_sel`和`io_ctrl_b_sel`表示ALU的操作数来源，  
+2. `io_ctrl_imm_sel`表示立即数的格式
+3. `io_ctrl_alu_op`表示ALU需要进行的操作。  
+
+:::details 上述信号的取值意义
+建议查看[源码](https://github.com/ucb-bar/riscv-mini/blob/main/src/main/scala/mini/Control.scala)，此处罗列关键部分
+:::code-tabs #def
+@tab Control
+```scala 
+  // A_sel
+  val A_XXX = 0.U(1.W)
+  val A_PC = 0.U(1.W)
+  val A_RS1 = 1.U(1.W)
+
+  // B_sel
+  val B_XXX = 0.U(1.W)
+  val B_IMM = 0.U(1.W)
+  val B_RS2 = 1.U(1.W)
+
+  // imm_sel
+  val IMM_X = 0.U(3.W)
+  val IMM_I = 1.U(3.W)
+  val IMM_S = 2.U(3.W)
+  val IMM_U = 3.U(3.W)
+  val IMM_J = 4.U(3.W)
+  val IMM_B = 5.U(3.W)
+  val IMM_Z = 6.U(3.W)
+```
+@tab ALU 
+```scala 
+object Alu {
+  val ALU_ADD = 0.U(4.W)
+  val ALU_SUB = 1.U(4.W)
+  val ALU_AND = 2.U(4.W)
+  val ALU_OR = 3.U(4.W)
+  val ALU_XOR = 4.U(4.W)
+  val ALU_SLT = 5.U(4.W)
+  val ALU_SLL = 6.U(4.W)
+  val ALU_SLTU = 7.U(4.W)
+  val ALU_SRL = 8.U(4.W)
+  val ALU_SRA = 9.U(4.W)
+  val ALU_COPY_A = 10.U(4.W)
+  val ALU_COPY_B = 11.U(4.W)
+  val ALU_XXX = 15.U(4.W)
+}
+```
+:::
+
+**重点关注指令`li a0,10`, 地址`0x210`， 十六进制`0x00a00513`**                 
+> 伪指令，对应 `add a0, x0, 10`
+**从波形图中观察验证:**  
+1. 在取得`0x00a00513`指令输入后，经过译码，这些控制信号的输出分别为：  
+
+| 控制信号 | 输出 |
+| --- | --- |
+|`io_ctrl_a_sel`  | 1,对应 A_RS1 |
+|`io_ctrl_b_sel` | 0,对应 B_IMM |
+|`io_ctrl_imm_sel` | 001, 对应IMM_I |
+| `io_ctrl_alu_op`  | 0000,对应ALU_ADD |
 
 
+2. 观察寄存器文件和立即数生成单元
+- [ ] addr1为0，addr2为0A，对应x0和x10寄存器的地址，
+- [ ] 读出数据regFile_io_rdata1为0。  
+- [ ] 立即数生成单元的输出10, 进行位扩展之后的结果为0000000A。  
 
-- 这些信号取值对应的详细意义  
-可以到riscv-mini/src/main/scala/mini/control.scala查看源码。  
+3. 观察ALU单元
+- [ ] ALU将选取rs1寄存器（这里对应x0）和立即数生成器的输出作为输入，  
+  - [ ] alu_io_A和alu_io_B分别为0和0A，即regFile_io_rdata1和ImmGen_io_out的数值。  
+  - [ ] alu_io_out则为alu执行ALU_ADD操作的结果，为0A。  
+- [ ] alu计算结果在下一个周期出现在寄存器ew_reg_alu。  
+- [ ] 在写回阶段，regFile_io_wen写允许位被拉高，写地址regFile_io_waddr为0A，即目的寄存器x10的地址，  
 
-- regFile.io.raddr1和regFile.io.raddr2为从指令中提取出的源操作数1和源操作数2的寄存器地址，  
+4. 验证寄存器最终结果
+- [ ] 观察reg(10)即x10寄存器，可以看到其数值在下一个周期变为0A，证明写回阶段成功执行。
 
-从波形图中观察验证: 
-- addr1为0，addr2为0A，对应x0和x10寄存器的地址，之后传递给寄存器文件（Register File）的读取端口，  
-- 读出数据regFile_io_rdata1和regFile_io_rdata2均为0。  
+:::details 波形图验证
+![译码后的信号](/assets/image/lab6/vcd-ctrl-1.png)
+- [x] 译码后的控制信号的输出
 
-> ImmGen_io_out为立即数生成单元的输出，即对指令立即数字段提取之后进行扩展之后的结果0000000A。  
-- 根据指令译码的结果，知道alu将选取rs1寄存器（这里对应x0）和立即数生成器的输出作为输入，  
-从波形图上观察验证：
-- alu_io_A和alu_io_B分别为0和0A，即regFile_io_rdata1和ImmGen_io_out的数值。  
-- alu_io_out则为alu执行ALU_ADD操作的结果，为0A。  
-- alu计算结果在下一个周期又送到了ew_reg_alu，供写回阶段使用。  
-- 在写回阶段，regFile_io_wen写允许位被拉高，写地址regFile_io_waddr为0A，即目的寄存器x10的地址，  
-- 写入数据regFile_io_wdata为0A，来自ew_reg_alu。  
-- 观察reg(10)即x10寄存器，可以看到其数值在下一个周期变为0A，  
-证明写回阶段成功执行。
+![寄存器观察](/assets/image/lab6/vcd-ctrl-2.png)
+- [x] addr1为0，addr2为0A
+- [x] 数据regFile_io_rdata1为0。  
+- [x] 立即数生成单元的输出进行位扩展之后的结果为0000000A。  
+
+![ALU观察](/assets/image/lab6/vcd-ctrl-3.png)
+- [x] ALU将选取rs1寄存器和立即数作为输入，  
+  - [x] alu_io_A和alu_io_B分别为0和0A，即regFile_io_rdata1和ImmGen_io_out的数值。  
+  - [x] alu_io_out则为ALU_ADD的执行结果，为0A。  
+
+![写回阶段的观察](/assets/image/lab6/vcd-ctrl-3.png)
+- [x] 写回阶段，alu计算结果出现在寄存器ew_reg_alu。  
+- [x] 写回阶段，regFile_io_wen写使能有效，写地址regFile_io_waddr为0A
+
+
+![验证最后的a0寄存器](/assets/image/lab6/vcd-ctrl-5.png)
+- [x] x10寄存器，数值在下一个周期变为0A，写回阶段成功执行。
+:::
 
