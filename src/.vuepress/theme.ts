@@ -10,6 +10,16 @@ export default hopeTheme({
     url: "https://yongruifang.netlify.app",
   },
 
+  pageInfo: [
+    "Author",
+    "Original",
+    "Date",
+    "Category",
+    "Tag",
+    "ReadingTime",
+    // "Word"
+  ],
+
   iconAssets: "fontawesome",
 
   logo: "/logo.svg",

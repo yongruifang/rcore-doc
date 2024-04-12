@@ -31,17 +31,57 @@ riscv32-unknown-elf-gcc --version # 测试
 
 
 方法2：
-[百度网盘-tar.gz (约700M)](https://pan.baidu.com/s/1wk_n92tIMI2ZW4Ppa9nrZQ?pwd=risc)
-- 下载并解压
+我按照方法1的步骤安装了一遍，打包成tar.xz放在我的github仓库里。  
+使用这个tar.xz的方法如下：  
+- 下载并解压 , [github release 地址](https://github.com/yongruifang/rcore-doc/releases/tag/riscv-addon)
+```bash 
+wget https://github.com/yongruifang/rcore-doc/releases/download/riscv-addon/riscv-addon.tar.xz
+mkdir /riscv-addon
+mv riscv-addon.tar.xz /riscv-addon 
+cd /riscv-addon 
+tar xvf riscv-addon.tar.xz 
+```
+
 - 在`~/.bashrc`中添加配置。
 ```bash 
 export PATH=/home/fangy/riscv/bin:$PATH
 export LD_LIBRARY_PATH=/home/fangy/riscv/lib:$LD_LIBRARY_PATH
 ```
 - `source ~/.bashrc`
-- 测试
+ 
+
+
+
+### 测试elf2hex
 ```bash:no-line-numbers 
 运行命令 elf2hex
 打印 Usage: elf2hex <width> <depth> <elf_file>
 ```
 
+### 测试test.s的编译
+:::code-tabs #shell 
+@tab test.s 
+```asmatmel
+    .text
+    .global _start
+_start:
+    li x6, 1 
+    li x7, 2 
+    add x5, x6, x7 
+exit:
+    csrw mtohost, 1
+    j exit
+    .end
+```
+```
+:::
+
+
+```bash :no-line-numbers
+riscv32-unknown-elf-gcc -nostdlib -Ttext=0x200 -o test test.s
+# 编译完成之后，得到elf文件。
+riscv32-unknown-elf-readelf -h test
+# 查看系统架构， 入口地址
+# 还可以反汇编
+riscv32-unknown-elf-objdump -S test
+```
