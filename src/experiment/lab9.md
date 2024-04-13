@@ -20,6 +20,7 @@ tag: [pthread, SMP]
 
 ## 步骤 
 ### 1. 统计一个数组中数值“3”的出现次数  
+:::details 参考代码
 :::code-tabs #count 
 @tab count3.c 
 ```c 
