@@ -2,7 +2,7 @@
 title: 9. 并行-存储体系实验
 icon: sd-card
 headerDepth: 3
-description: 掌握多核处理器的pthread编程
+description: 掌握多核处理器的pthread编程, 统计一个数组中数值"3"的出现次数，数组大小至少256M，初始化为"03030303...", 记录运行时间，使用pthread进行多线程编程，通过加锁解决同步问题，通过私有变量优化性能，尝试消除SMP上的缓存cache ping-pong效应。
 tag: [pthread, SMP]
 ---
 ## 目标
