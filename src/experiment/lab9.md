@@ -290,15 +290,15 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-/* #define ARRAY_LENGTH 256 * 1024 * 1024 */
-#define ARRAY_LENGTH 400 * 1024 * 1024
+#define ARRAY_LENGTH 256 * 1024 * 1024
 #define TEST 5
 int array[ARRAY_LENGTH];
 pthread_mutex_t mutex;
 int count = 0;
 int thread_nums[TEST] = {1, 2, 4, 8, 16};
 int t_index = 0;
-clock_t start, end;
+/* clock_t start, end; */
+struct timespec start, finish;
 double elapsed;
 void *count3s_thread(void *thread_id) {
   int tid;
@@ -328,7 +328,7 @@ int main() {
     count = 0;
     printf("============%d Threads Result====================\n",
            thread_nums[t_index]);
-    start = clock();
+    clock_gettime(CLOCK_REALTIME, &start);
     int thread_num = thread_nums[t_index];
     pthread_t *threads = (pthread_t *)malloc(thread_num * sizeof(pthread_t));
     for (int i = 0; i < thread_num; i++) {
@@ -343,12 +343,10 @@ int main() {
     for (int i = 0; i < thread_num; i++) {
       pthread_join(threads[i], NULL);
     }
-    /* for (int i = 0; i < thread_num; i++) { */
-    /*   printf("thread[%02d] count: %x \n", i, local_sum[i]); */
-    /* } */
     printf("the last count: 0x%x\n", count);
-    end = clock();
-    elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+    clock_gettime(CLOCK_REALTIME, &finish);
+    elapsed = (finish.tv_sec - start.tv_sec) +
+              1.0e-9 * (finish.tv_nsec - start.tv_nsec);
     printf("count3 time cost: %f s\n", elapsed);
   }
   getchar();
@@ -357,6 +355,11 @@ int main() {
 }
 ```
 :::
+
+> [!WARNING]
+> 样例代码计算运行时间使用`clock()`是不准确的，`clock()`不适用于统计多线程程序的运行时间
+> clock测量的是处理器的CPU时间，当开启多线程时，使用clock算出的时间可能比实际的时间多一些。
+> linux下，应该使用clock_gettime进行计时
 
 ### 2. 消除ping-pong效应
 参考多核处理器间cache竞争引发的ping-pong效应（两个或多个核之间竞争同一个行的数据），尝试消除该效应并检验是否获得性能提升。
