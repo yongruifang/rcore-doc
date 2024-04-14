@@ -349,8 +349,15 @@ rs2_data: 0x00000000
 ```
 :::
 
-### lw
+### LW指令的实现
+LW, load word, 从存储器读取32位数据到寄存器。   
 :::details 代码
+汇编描述：`lw rd, offset(rs1)`  
+运算：`x[rd] = M[x[rs1] + sext(imm_i)]`  
+> sext表示符号扩展  
+
+位配置: I格式   
+I格式的立即数，记录为`imm_i`  
 :::code-tabs #shell 
 @tab Core 
 ```scala 
@@ -468,9 +475,16 @@ wb_data: 0x00802303
 :::
 
 
-### sw 
-
+### SW指令的实现 
+SW, store word, 将32位的寄存器数据写入寄存器中
 :::details 代码
+汇编描述：`sw rs2, offset(rs1)`  
+运算：`M[ x[rs1]+sext(imm_s) ] = x[rs2]`  
+位配置：S格式   
+S格式的立即数记录为`imm_s`  
+
+> 许多指令中出现的s2和rd的位址不变，这个现象使得译码更加容易，灵活适应部分立即数
+
 :::code-tabs #shell 
 @tab README 
 ```md 
@@ -567,9 +581,10 @@ dmem.wdata: 0x406287b3
 ```
 :::
 
-### add sub 
-
+### 加减法指令的实现
+最基本的运算--加减法
 :::details 代码
+除了加载/存储指令, 其他指令没有访存需求。
 :::code-tabs #shell 
 @tab core 
 ```scala 
@@ -619,7 +634,7 @@ dmem.wdata: 0x406287b3
 ```
 :::
 
-### logic 
+### 逻辑运算的实现
 :::details 
 :::code-tabs #logic 
 @tab Core 
@@ -774,10 +789,12 @@ dmem.wdata: 0x00000000
 
 
 ### 优化译码器
+你是否发现了代码存在重复运算的问题，而导致代码愈发冗长。  
+例如AND和ANDI只有第二操作数不同，存在共用部分代码的可能性。  
 :::details 
-1. Constants 
+1. Constants, 定义在ListLookup中出现的常量  
 2. ListLookup 
-3. dmem_wen
+3. dmem_wen, 原本在MEM阶段对inst进行译码，现在整合到ListLookup中译码  
 :::code-tabs #optimize
 @tab Constants 
 ```scala 
@@ -856,6 +873,8 @@ dmem.wdata: 0x00000000
 :::
 
 ### 译码信号新增 rf_wen , wb_sel 
+在ID阶段预先对wb_data的识别信号和回写有效信号进行译码，保存在rf_wen和wb_sel中。  
+强化译码器之后，由于不必将inst传递给EX以后的阶段，还得以提高电路和代码的可读性
 :::details 
 :::code-tabs #preprocess
 @tab Constants 
@@ -905,7 +924,8 @@ dmem.wdata: 0x00000000
 ```
 :::
 
-### shift 
+### 移位运算的实现
+`sll, srl, sra, slli, srli, srai`
 :::details 
 :::code-tabs #shift 
 @tab Constants
@@ -996,7 +1016,9 @@ dmem.wdata: 0x00000000
 ```
 :::
 
-### slt 
+### 比较运算的实现  
+`slt, sltu, slti, sltui`  
+SLT指令比较两个操作数的大小，若op1小于op2，则指定寄存器写入1，否则写入0.
 :::details
 :::code-tabs #slt
 @tab Constants 
@@ -1100,7 +1122,15 @@ dmem.wdata: 0x406287b3
 ```
 :::
 
-### branch 
+### 分支指令的实现
+`beq, bne, blt, bge, bltu, bgeu`  
+分支指令更新的是PC寄存器，而不是通用寄存器的值。  
+位配置：B格式  
+:::important 立即数`imm_b`的提取方法
+1. 指令位列中只制定了立即数12位的高11位，imm[0]始终为0. 立即数始终是2的倍数。
+2. 立即数的配置并非有序排列，即使指令格式不同，符号扩展后的立即数的每一位都尽可能对应了指令位列中的相同位。
+> 例如进行32位符号扩展时，立即数的最高位始终配置为inst[31], 所以无论是何种指令类型，都可以共享立即数的符号扩展处理
+:::
 :::details
 :::code-tabs #branch
 @tab Constants 
@@ -1192,8 +1222,17 @@ branch.target: 0x00000050
 :::
 
 
-### jmp 
+### 跳转指令的实现  
+`jal, jalr`  
+分支指令仅在条件成立时跳转，而跳转指令是无条件跳转的。  
+位配置：分别是J格式、I格式  
+JAL和分支指令的B格式有相同点：最低位不需要指令位定义，始终为0  
+JALR，下一个循环的PC为 `(x[rs1] + sext(imm_i)) & ~1`  
+> 此AND运算的作用是最低位归零，  
+> JAL和JALR指令中跳转目标地址的最低位始终为0，这种规定增加了可跳转的宽度  
+
 :::details
+rd寄存器中保存的是当前PC+4，通常rd寄存器设为ra寄存器  
 :::code-tabs #jmp
 @tab Constants 
 ```scala
@@ -1304,8 +1343,15 @@ jmp.flag:  1
 
 :::
 
-### lui,auipc 
+### 立即数加载指令的实现  
+`lui, auipc`  
+指令内容  
+lui: `sext(imm_u[31:12] << 12)`  
+auipc: `pc + sext(imm_u[31:12] << 12)`  
 :::details
+AUIPC指令用于计算PC相对地址  
+> 组合，AUIPC和JARL指令  
+> 用AUIPC指令指定立即数的高20位，用JALR指令指定立即数的低12位，跳转到PC的32位范围内任意相对地址。
 :::code-tabs #imm
 @tab Constants 
 ```scala
@@ -1393,7 +1439,10 @@ jmp.flag:  0
 ```
 :::
 
-### csr 
+### CSR指令的实现  
+CSR，控制与状态寄存器  
+控制寄存器用于中断/异常处理的管理、虚拟存储器的设定  
+状态寄存器还能表示CPU的状态  
 :::details
 :::code-tabs #csr
 @tab Constants
@@ -1654,8 +1703,13 @@ jmp.flag:  0
 ```
 :::
 
-### ecall 
+### ECALL的实现  
+ECALL，是在发生异常时调用运行环境的指令。  
+按惯例，属于I格式，但是第7-31位均为0  
+具体处理内容：根据CPU模式，将对应值写入mcause寄存器, 跳转到mtvec中保存的陷阱向量地址  
 :::details
+> trap_vector描述了异常发生时的处理
+
 本次Chisel实现的CPU无运行环境，所以到trap_vector的迁移会触发异常
 :::code-tabs #ecall
 @tab Constants 
@@ -1734,5 +1788,92 @@ jmp.flag:  0
 ```
 :::
 
-## 正式测试：riscv-test
+## 正式测试：使用riscv-tests
+[工具包介绍](/trouble/riscv-test.html#下载编译)   
+上述测试，通过手动提供机器语言属于简单但不完整的测试，  
+最后我们应该使用工具包简易且全面地测试指令实现的正确性。  
+:::details 
+:::code-tabs #riscvtests 
+@tab 下载编译
+```bash 
+git clone -b master --single-branch https://github.com/riscv/riscv-tests 
+cd riscv-tests 
+git submodule update --init --recursive
+
+修改riscv-tests/env/p/link.ld
+SECTIONS {
+  .=0x00000000; // 起始地址修改, 原 0x8000_0000
+}
+
+
+autoconf 
+./configure --prefix=$RISCV/target 
+make 
+make install
+
+# 迁移
+mkdir -p ~/my-tests/elf
+sudo cp rv32*i-p-* ~/my-tests/elf
+```
+@tab 批量生成hex 
+```sh 
+#!/bin/bash
+
+FILES=~/my-tests/elf/rv32*i-p-*
+SAVE_DIR=~/my-tests/hex
+
+for f in $FILES; do
+	FILE_NAME="${f##*/}"              
+	if [[ ${f##*.} != "dump" ]]; then 
+		# elf2hex 16 4096 $f >$SAVE_DIR/${FILE_NAME}.hex.txt
+		riscv32-unknown-elf-objcopy -O binary $f $SAVE_DIR/$FILE_NAME.bin
+		od -An -tx1 -w1 -v $SAVE_DIR/$FILE_NAME.bin >$SAVE_DIR/$FILE_NAME.hex.txt
+		rm -f $SAVE_DIR/$FILE_NAME.bin
+	fi
+done
+```
+@tab 迁移到项目 
+```sh 
+#!/bin/bash
+
+FILES=~/my-tests/hex/rv32*i-p-*
+TARGET_DIR=~/sandbox/single_cpu/chisel-template/src/riscvtest
+
+for f in $FILES; do
+        cp $f $TARGET_DIR
+done
+```
+
+@tab RiscvtestSpec 
+```scala
+package single
+import chisel3._
+import chiseltest._
+import org.scalatest.freespec.AnyFreeSpec
+import chisel3.experimental.BundleLiterals._
+import java.io.File
+
+class RiscvtestSpec extends AnyFreeSpec with ChiselScalatestTester {
+  "should pass rv32*i-p-*" in {
+    def getAllFilesInDirectory(dirPath: String): List[File] = {
+      val directory = new File(dirPath)
+      if (directory.exists && directory.isDirectory) {
+        directory.listFiles.filter(_.isFile).toList
+      } else {
+        List.empty[File]
+      }
+    }
+    val directoryPath = "src/riscvtest"
+    val allFiles      = getAllFilesInDirectory(directoryPath)
+    allFiles.foreach(file =>
+      test(new Top(file.toString())) { dut =>
+        while (!dut.io.exit.peek().litToBoolean) {
+          dut.clock.step()
+        }
+        dut.io.gp.expect(1.U)
+      }
+    )
+  }
+}
+```
 

@@ -1,6 +1,7 @@
 ---
 title: 使用Coursier安装Scala
-icon: wrench
+shortTitle: couriser
+icon: circle-down
 description: 使用Coursier安装Scala的注意事项
 tag: [coursier, scala, chisel, sbt]
 ---

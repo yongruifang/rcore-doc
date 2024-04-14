@@ -1,5 +1,6 @@
 ---
 title: 安装使用riscv-toolchain
+shortTitle: riscv-toolchain
 icon: link
 description: 构建riscv-toolchain的经验分享
 tag: riscv-toolchain
