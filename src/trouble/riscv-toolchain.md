@@ -84,4 +84,6 @@ riscv32-unknown-elf-readelf -h test
 # 查看系统架构， 入口地址
 # 还可以反汇编
 riscv32-unknown-elf-objdump -S test
+
+elf2hex 16 4096 test > test.hex
 ```

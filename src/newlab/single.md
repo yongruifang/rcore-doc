@@ -6,12 +6,14 @@ description: 单周期实现
 tag: [riscv, chisel]
 ---
 
+## 项目初始化
 :::details 初始化
 :::code-tabs #shell 
 @tab .scalafmt.conf 
 ```conf 
 version = "3.7.15"
 runner.dialect = scala213
+align.preset = more
 ```
 @tab build.sbt 
 ```sbt 
@@ -49,7 +51,79 @@ lazy val root = (project in file("."))
 ## 取指
 1. 搭建基础设施和基本接口，实现取指需要的最低配置。
 ::: details 代码
+Instructions用BitPat对象定义了各指令的位列。  
 ::: code-tabs #shell 
+@tab Instructions
+```scala 
+package common
+
+import chisel3.util.BitPat
+
+object Instructions {
+  // Loads
+  def LB = BitPat("b?????????????????000?????0000011")
+  def LH = BitPat("b?????????????????001?????0000011")
+  def LW = BitPat("b?????????????????010?????0000011")
+  def LBU = BitPat("b?????????????????100?????0000011")
+  def LHU = BitPat("b?????????????????101?????0000011")
+  // Stores
+  def SB = BitPat("b?????????????????000?????0100011")
+  def SH = BitPat("b?????????????????001?????0100011")
+  def SW = BitPat("b?????????????????010?????0100011")
+  // Shifts
+  def SLL = BitPat("b0000000??????????001?????0110011")
+  def SLLI = BitPat("b0000000??????????001?????0010011")
+  def SRL = BitPat("b0000000??????????101?????0110011")
+  def SRLI = BitPat("b0000000??????????101?????0010011")
+  def SRA = BitPat("b0100000??????????101?????0110011")
+  def SRAI = BitPat("b0100000??????????101?????0010011")
+  // Arithmetic
+  def ADD = BitPat("b0000000??????????000?????0110011")
+  def ADDI = BitPat("b?????????????????000?????0010011")
+  def SUB = BitPat("b0100000??????????000?????0110011")
+  def LUI = BitPat("b?????????????????????????0110111")
+  def AUIPC = BitPat("b?????????????????????????0010111")
+  // Logical
+  def XOR = BitPat("b0000000??????????100?????0110011")
+  def XORI = BitPat("b?????????????????100?????0010011")
+  def OR = BitPat("b0000000??????????110?????0110011")
+  def ORI = BitPat("b?????????????????110?????0010011")
+  def AND = BitPat("b0000000??????????111?????0110011")
+  def ANDI = BitPat("b?????????????????111?????0010011")
+  // Compare
+  def SLT = BitPat("b0000000??????????010?????0110011")
+  def SLTI = BitPat("b?????????????????010?????0010011")
+  def SLTU = BitPat("b0000000??????????011?????0110011")
+  def SLTIU = BitPat("b?????????????????011?????0010011")
+  // Branches
+  def BEQ = BitPat("b?????????????????000?????1100011")
+  def BNE = BitPat("b?????????????????001?????1100011")
+  def BLT = BitPat("b?????????????????100?????1100011")
+  def BGE = BitPat("b?????????????????101?????1100011")
+  def BLTU = BitPat("b?????????????????110?????1100011")
+  def BGEU = BitPat("b?????????????????111?????1100011")
+  // Jump & Link
+  def JAL = BitPat("b?????????????????????????1101111")
+  def JALR = BitPat("b?????????????????000?????1100111")
+  // Synch
+  def FENCE = BitPat("b0000????????00000000000000001111")
+  def FENCEI = BitPat("b00000000000000000001000000001111")
+  // CSR Access
+  def CSRRW = BitPat("b?????????????????001?????1110011")
+  def CSRRS = BitPat("b?????????????????010?????1110011")
+  def CSRRC = BitPat("b?????????????????011?????1110011")
+  def CSRRWI = BitPat("b?????????????????101?????1110011")
+  def CSRRSI = BitPat("b?????????????????110?????1110011")
+  def CSRRCI = BitPat("b?????????????????111?????1110011")
+  // Change Level
+  def ECALL = BitPat("b00000000000000000000000001110011")
+  def EBREAK = BitPat("b00000000000100000000000001110011")
+  def ERET = BitPat("b00010000000000000000000001110011")
+  def WFI = BitPat("b00010000001000000000000001110011")
+
+  def NOP = BitPat.bitPatToUInt(BitPat("b00000000000000000000000000010011"))
+}
+```
 @tab common/Constant
 ```scala 
 package common
@@ -223,7 +297,8 @@ class BasicSpec extends AnyFreeSpec with ChiselScalatestTester {
 :::
 
 
-## 译码
+## 渐进式开发
+从译码开始，通过逐步扩展指令的实现来进行代码完善
 :::details 代码 
 :::code-tabs #shell 
 @tab Core 
@@ -250,104 +325,33 @@ class BasicSpec extends AnyFreeSpec with ChiselScalatestTester {
 sbt "testOnly single.BasicSpec" 
 
 打印调试信息内容：
+-----------  对应 lw x6, 8(x0):
 pc_reg: 0x00000000
 inst: 0x00802303
 rs1_addr:   0
 rs1_data: 0x00000000
 rs2_addr:   8
 rs2_data: 0x00000000
------------  对应 lw x6, 8(x0):
+----------- 对应 add x5, x6, x6 
 pc_reg: 0x00000004
 inst: 0x006302b3
 rs1_addr:   6
 rs1_data: 0x00000000
 rs2_addr:   6
 rs2_data: 0x00000000
------------ 对应 add x5, x6, x6 
+----------- 对应 sub x15, x5, x6
 pc_reg: 0x00000008
 inst: 0x406287b3
 rs1_addr:   5
 rs1_data: 0x00000000
 rs2_addr:   6
 rs2_data: 0x00000000
------------ 对应 sub x15, x5, x6
 ```
 :::
 
 ### lw
 :::details 代码
 :::code-tabs #shell 
-@tab Instructions
-```scala 
-package common
-
-import chisel3.util.BitPat
-
-object Instructions {
-  // Loads
-  def LB = BitPat("b?????????????????000?????0000011")
-  def LH = BitPat("b?????????????????001?????0000011")
-  def LW = BitPat("b?????????????????010?????0000011")
-  def LBU = BitPat("b?????????????????100?????0000011")
-  def LHU = BitPat("b?????????????????101?????0000011")
-  // Stores
-  def SB = BitPat("b?????????????????000?????0100011")
-  def SH = BitPat("b?????????????????001?????0100011")
-  def SW = BitPat("b?????????????????010?????0100011")
-  // Shifts
-  def SLL = BitPat("b0000000??????????001?????0110011")
-  def SLLI = BitPat("b0000000??????????001?????0010011")
-  def SRL = BitPat("b0000000??????????101?????0110011")
-  def SRLI = BitPat("b0000000??????????101?????0010011")
-  def SRA = BitPat("b0100000??????????101?????0110011")
-  def SRAI = BitPat("b0100000??????????101?????0010011")
-  // Arithmetic
-  def ADD = BitPat("b0000000??????????000?????0110011")
-  def ADDI = BitPat("b?????????????????000?????0010011")
-  def SUB = BitPat("b0100000??????????000?????0110011")
-  def LUI = BitPat("b?????????????????????????0110111")
-  def AUIPC = BitPat("b?????????????????????????0010111")
-  // Logical
-  def XOR = BitPat("b0000000??????????100?????0110011")
-  def XORI = BitPat("b?????????????????100?????0010011")
-  def OR = BitPat("b0000000??????????110?????0110011")
-  def ORI = BitPat("b?????????????????110?????0010011")
-  def AND = BitPat("b0000000??????????111?????0110011")
-  def ANDI = BitPat("b?????????????????111?????0010011")
-  // Compare
-  def SLT = BitPat("b0000000??????????010?????0110011")
-  def SLTI = BitPat("b?????????????????010?????0010011")
-  def SLTU = BitPat("b0000000??????????011?????0110011")
-  def SLTIU = BitPat("b?????????????????011?????0010011")
-  // Branches
-  def BEQ = BitPat("b?????????????????000?????1100011")
-  def BNE = BitPat("b?????????????????001?????1100011")
-  def BLT = BitPat("b?????????????????100?????1100011")
-  def BGE = BitPat("b?????????????????101?????1100011")
-  def BLTU = BitPat("b?????????????????110?????1100011")
-  def BGEU = BitPat("b?????????????????111?????1100011")
-  // Jump & Link
-  def JAL = BitPat("b?????????????????????????1101111")
-  def JALR = BitPat("b?????????????????000?????1100111")
-  // Synch
-  def FENCE = BitPat("b0000????????00000000000000001111")
-  def FENCEI = BitPat("b00000000000000000001000000001111")
-  // CSR Access
-  def CSRRW = BitPat("b?????????????????001?????1110011")
-  def CSRRS = BitPat("b?????????????????010?????1110011")
-  def CSRRC = BitPat("b?????????????????011?????1110011")
-  def CSRRWI = BitPat("b?????????????????101?????1110011")
-  def CSRRSI = BitPat("b?????????????????110?????1110011")
-  def CSRRCI = BitPat("b?????????????????111?????1110011")
-  // Change Level
-  def ECALL = BitPat("b00000000000000000000000001110011")
-  def EBREAK = BitPat("b00000000000100000000000001110011")
-  def ERET = BitPat("b00010000000000000000000001110011")
-  def WFI = BitPat("b00010000001000000000000001110011")
-
-  def NOP = BitPat.bitPatToUInt(BitPat("b00000000000000000000000000010011"))
-}
-```
 @tab Core 
 ```scala 
 +++
@@ -426,10 +430,11 @@ class Memory(memoryFile: String="") extends Module {
 ```
 
 @tab 运行测试
-```bash 
+```bash{11-13,25-26} 
 sbt "testOnly single.BasicSpec"
 
 打印调试信息:
+----------- 对应指令: lw x6, 8(x0)
 pc_reg: 0x00000000
 inst: 0x00802303
 rs1_addr:   0
@@ -439,7 +444,7 @@ rs2_data: 0x00000000
 wb_addr, 0x06
 alu_out: 0x00000008
 wb_data: 0x406287b3
------------ 对应指令: lw x6, 8(x0)
+----------- 对应指令： add x5, x6, x6
 pc_reg: 0x00000004
 inst: 0x006302b3
 rs1_addr:   6
@@ -449,7 +454,7 @@ rs2_data: 0x406287b3
 wb_addr, 0x05
 alu_out: 0x00000000
 wb_data: 0x00802303
------------ 对应指令： add x5, x6, x6
+----------- 对应指令：sub x15, x5, x6
 pc_reg: 0x00000008
 inst: 0x406287b3
 rs1_addr:   5
@@ -459,8 +464,6 @@ rs2_data: 0x406287b3
 wb_addr, 0x0f
 alu_out: 0x00000000
 wb_data: 0x00802303
------------ 对应指令：sub x15, x5, x6
-
 ```
 :::
 
@@ -548,43 +551,8 @@ class Memory(memoryFile: String="") extends Module {
   printf("-----------\n")
 ```
 @tab 运行测试
-```bash 
-pc_reg: 0x00000000
-inst: 0x00802303
-rs1_addr:   0
-rs1_data: 0x00000000
-rs2_addr:   8
-rs2_data: 0x00000000
-wb_addr, 0x06
-alu_out: 0x00000008
-wb_data: 0x406287b3
-dmem.wen: 0x0
-dmem.wdata: 0x00000000
------------ 对应指令 lw x6, 8(x0)
-pc_reg: 0x00000004
-inst: 0x006302b3
-rs1_addr:   6
-rs1_data: 0x406287b3
-rs2_addr:   6
-rs2_data: 0x406287b3
-wb_addr, 0x05
-alu_out: 0x00000000
-wb_data: 0x00802303
-dmem.wen: 0x0
-dmem.wdata: 0x406287b3
------------ 对应指令 add x5, x6, x6 
-pc_reg: 0x00000008
-inst: 0x406287b3
-rs1_addr:   5
-rs1_data: 0x00000000
-rs2_addr:   6
-rs2_data: 0x406287b3
-wb_addr, 0x0f
-alu_out: 0x00000000
-wb_data: 0x00802303
-dmem.wen: 0x0
-dmem.wdata: 0x406287b3
------------ 对应指令 sub x15, x5, x6 
+```bash{8,10}
+----------- 对应指令 sw x6, 16(x0)
 pc_reg: 0x0000000c
 inst: 0x00602823
 rs1_addr:   0
@@ -596,7 +564,6 @@ alu_out: 0x00000006
 wb_data: 0x87b30063
 dmem.wen: 0x1
 dmem.wdata: 0x406287b3
------------ 对应指令 sw x6, 16(x0)
 ```
 :::
 
@@ -604,6 +571,1168 @@ dmem.wdata: 0x406287b3
 
 :::details 代码
 :::code-tabs #shell 
-@tab 
+@tab core 
+```scala 
+  val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
+      (inst === LW) -> (rs1_data + imm_i_sext),
+      (inst === SW) -> (rs1_data + imm_s_sext),
+      (inst === ADD) -> (rs1_data + rs2_data),
+      (inst === SUB) -> (rs1_data - rs2_data)
+  ))
+
+  val wb_data = MuxCase(
+    alu_out,
+    Seq(
+      (inst === LW) -> io.dmem.read_data
+    )
+  )
+  when(inst === LW || inst === ADD || inst === ADDI || inst === SUB) {
+    regfile(wb_addr) := wb_data
+  }
+```
+@tab 运行测试
+```bash{4,6,8-10,16,18,20-22}
+----------- 对应指令 add x5, x6, x6 
+pc_reg: 0x00000004
+inst: 0x006302b3
+rs1_addr:   6
+rs1_data: 0x406287b3
+rs2_addr:   6
+rs2_data: 0x406287b3
+wb_addr, 0x05
+alu_out: 0x80c50f66
+wb_data: 0x80c50f66
+dmem.wen: 0x0
+dmem.wdata: 0x406287b3
+----------- 对应指令 sub x15, x5, x6 
+pc_reg: 0x00000008
+inst: 0x406287b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   6
+rs2_data: 0x406287b3
+wb_addr, 0x0f
+alu_out: 0x406287b3
+wb_data: 0x406287b3
+dmem.wen: 0x0
+dmem.wdata: 0x406287b3
+```
+:::
+
+### logic 
+:::details 
+:::code-tabs #logic 
+@tab Core 
+```scala
+  val alu_out = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (inst === LW) -> (rs1_data + imm_i_sext),
+      (inst === SW) -> (rs1_data + imm_s_sext),
+      (inst === ADD) -> (rs1_data + rs2_data),
+      (inst === SUB) -> (rs1_data - rs2_data),
+      (inst === AND) -> (rs1_data & rs2_data),
+      (inst === OR) -> (rs1_data | rs2_data),
+      (inst === XOR) -> (rs1_data ^ rs2_data),
+      (inst === ANDI) -> (rs1_data & imm_i_sext),
+      (inst === ORI) -> (rs1_data | imm_i_sext),
+      (inst === XORI) -> (rs1_data ^ imm_i_sext)
+    )
+  )
+
+  when(
+    inst === LW || inst === ADD || inst === ADDI || inst === SUB
+      || inst === AND || inst === OR || inst === XOR || inst === ANDI
+      || inst === ORI || inst === XORI
+  ) {
+    regfile(wb_addr) := wb_data
+  }
+```
+@tab readme 
+```md 
+and x3, x5, x7
+0x0072f1b3
+
+or x3, x5, x7
+0x0072e1b3
+
+xor x3, x5, x7 
+0x0072c1b3
+
+andi x3, x5, 10 
+0x00a2f193
+
+ori x3, x5, 10 
+0x00a2e193 
+
+xori x3, x5, 10 
+0x00a2c193
+```
+@tab hex 
+```txt 
+b3
+f1
+72
+00
+b3
+e1
+72
+00
+b3
+c1
+72
+00
+93
+f1
+a2
+00
+93
+e1
+a2
+00
+93
+c1
+a2
+00
+```
+@tab 测试结果
+```bash{4,6,8-10,16,18,20-22,28,30,32-34,40,42,44-46,52,54,56-58,64,66,68-70}
+----------- 对应指令and x3, x5, x7 
+pc_reg: 0x00000010
+inst: 0x0072f1b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令 or x3, x5, x7 
+pc_reg: 0x00000014
+inst: 0x0072e1b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f66
+wb_data: 0x80c50f66
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令xor x3, x5, x7 
+pc_reg: 0x00000018
+inst: 0x0072c1b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f66
+wb_data: 0x80c50f66
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令andi x3, x5, 10 
+pc_reg: 0x0000001c
+inst: 0x00a2f193
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:  10
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x00000002
+wb_data: 0x00000002
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令ori x3, x5, 10 
+pc_reg: 0x00000020
+inst: 0x00a2e193
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:  10
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f6e
+wb_data: 0x80c50f6e
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令xori x3, x5, 10
+pc_reg: 0x00000024
+inst: 0x00a2c193
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:  10
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f6c
+wb_data: 0x80c50f6c
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+```
+:::
+
+
+### 优化译码器
+:::details 
+1. Constants 
+2. ListLookup 
+3. dmem_wen
+:::code-tabs #optimize
+@tab Constants 
+```scala 
+  val EXE_FUN_LEN = 5
+  val ALU_X       = 0.U(EXE_FUN_LEN.W)
+  val ALU_ADD     = 1.U(EXE_FUN_LEN.W)
+  val ALU_SUB     = 2.U(EXE_FUN_LEN.W)
+  val ALU_AND     = 3.U(EXE_FUN_LEN.W)
+  val ALU_OR      = 4.U(EXE_FUN_LEN.W)
+  val ALU_XOR     = 5.U(EXE_FUN_LEN.W)
+
+  val OP1_LEN = 2
+  val OP1_RS1 = 0.U(OP1_LEN.W)
+
+  val OP2_LEN = 3
+  val OP2_X   = 0.U(OP2_LEN.W)
+  val OP2_RS2 = 1.U(OP2_LEN.W)
+  val OP2_IMI = 2.U(OP2_LEN.W)
+  val OP2_IMS = 3.U(OP2_LEN.W)
+
+  val MEN_LEN = 2
+  val MEN_X   = 0.U(MEN_LEN.W)
+  val MEN_S   = 1.U(MEN_LEN.W)
+  val MEN_V   = 2.U(MEN_LEN.W)
+```
+@tab Core 
+```scala 
+  val csignals = ListLookup(
+    inst,
+    List(ALU_X, OP1_RS1, OP2_RS2, MEN_X),
+    Array(
+      LW   -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X),
+      SW   -> List(ALU_ADD, OP1_RS1, OP2_IMS, MEN_S),
+      ADD  -> List(ALU_ADD, OP1_RS1, OP2_RS2, MEN_X),
+      ADDI -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X),
+      SUB  -> List(ALU_SUB, OP1_RS1, OP2_RS2, MEN_X),
+      AND  -> List(ALU_AND, OP1_RS1, OP2_RS2, MEN_X),
+      OR   -> List(ALU_OR, OP1_RS1, OP2_RS2, MEN_X),
+      XOR  -> List(ALU_XOR, OP1_RS1, OP2_RS2, MEN_X),
+      ANDI -> List(ALU_AND, OP1_RS1, OP2_IMS, MEN_X),
+      ORI  -> List(ALU_OR, OP1_RS1, OP2_IMS, MEN_X),
+      XORI -> List(ALU_XOR, OP1_RS1, OP2_IMS, MEN_X)
+    )
+  )
+  val exe_fun :: op1_sel :: op2_sel :: mem_wen :: Nil = csignals
+  val op1_data = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (op1_sel === OP1_RS1) -> rs1_data
+    )
+  )
+  val op2_data = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (op2_sel === OP2_RS2) -> rs2_data,
+      (op2_sel === OP2_IMI) -> imm_i_sext,
+      (op2_sel === OP2_IMS) -> imm_s_sext
+    )
+  )
+
+  val alu_out = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (exe_fun === ALU_ADD) -> (op1_data + op2_data),
+      (exe_fun === ALU_SUB) -> (op1_data - op2_data),
+      (exe_fun === ALU_AND) -> (op1_data & op2_data),
+      (exe_fun === ALU_OR)  -> (op1_data | op2_data),
+      (exe_fun === ALU_XOR) -> (op1_data ^ op2_data)
+    )
+  )
+
+
+  io.dmem.write_enable := mem_wen
+
+```
+:::
+
+### 译码信号新增 rf_wen , wb_sel 
+:::details 
+:::code-tabs #preprocess
+@tab Constants 
+```scala 
+  val REN_LEN = 2
+  val REN_X   = 0.U(MEN_LEN.W)
+  val REN_S   = 1.U(MEN_LEN.W)
+  val REN_V   = 2.U(MEN_LEN.W)
+
+  val WB_SEL_LEN = 3
+  val WB_X       = 0.U(WB_SEL_LEN.W)
+  val WB_ALU     = 0.U(WB_SEL_LEN.W)
+  val WB_MEM     = 1.U(WB_SEL_LEN.W)
+```
+@tab Core 
+```scala 
+  val csignals = ListLookup(
+    inst,
+    List(ALU_X, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_MEM),
+    Array(
+      LW   -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_MEM),
+      SW   -> List(ALU_ADD, OP1_RS1, OP2_IMS, MEN_S, REN_X, WB_X),
+      ADD  -> List(ALU_ADD, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      ADDI -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_ALU),
+      SUB  -> List(ALU_SUB, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      AND  -> List(ALU_AND, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      OR   -> List(ALU_OR, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      XOR  -> List(ALU_XOR, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      ANDI -> List(ALU_AND, OP1_RS1, OP2_IMS, MEN_X, REN_S, WB_ALU),
+      ORI  -> List(ALU_OR, OP1_RS1, OP2_IMS, MEN_X, REN_S, WB_ALU),
+      XORI -> List(ALU_XOR, OP1_RS1, OP2_IMS, MEN_X, REN_S, WB_ALU)
+    )
+  )
+  val exe_fun :: op1_sel :: op2_sel :: mem_wen :: rf_wen :: wb_sel :: Nil =
+    csignals
+
+
+  val wb_data = MuxCase(
+    alu_out,
+    Seq(
+      (wb_sel === WB_MEM) -> io.dmem.read_data
+    )
+  )
+  when(rf_wen === REN_S) {
+    regfile(wb_addr) := wb_data
+  }
+```
+:::
+
+### shift 
+:::details 
+:::code-tabs #shift 
+@tab Constants
+```scala 
+  val ALU_SLL     = 6.U(EXE_FUN_LEN.W)
+  val ALU_SRL     = 7.U(EXE_FUN_LEN.W)
+  val ALU_SRA     = 8.U(EXE_FUN_LEN.W)
+
+```
+@tab Core 
+```scala 
+      SLL  -> List(ALU_SLL, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      SRL  -> List(ALU_SRL, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      SRA  -> List(ALU_SRA, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      SLLI -> List(ALU_SLL, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_ALU),
+      SRLI -> List(ALU_SRL, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_ALU),
+      SRAI -> List(ALU_SRA, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_ALU)
+
+      (exe_fun === ALU_SLL) -> (op1_data << op2_data(4, 0))(31, 0),
+      (exe_fun === ALU_SRL) -> (op1_data >> op2_data(4, 0)),
+      (exe_fun === ALU_SRA) -> (op1_data.asSInt >> op2_data(4, 0)).asUInt
+
+```
+@tab readme 
+```md 
+sll x3, x5, x7 
+0x007291b3
+
+srl x3, x5, x7 
+0x0072d1b3
+
+sra x3, x5, x7 
+0x4072d1b3
+```
+@tab hex 
+```txt 
+b3 
+91 
+72 
+00 
+b3 
+d1 
+72 
+00 
+b3 
+d1 
+72 
+40 
+```
+@tab 测试
+```bash{4,6,8-10,16,18,20-22,28,30,32-34}
+----------- 对应指令sll x3, x5, x7 
+pc_reg: 0x00000028
+inst: 0x007291b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f66
+wb_data: 0x80c50f66
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令srl x3, x5, x7 
+pc_reg: 0x0000002c
+inst: 0x0072d1b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f66
+wb_data: 0x80c50f66
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令sra x3, x5, x7
+pc_reg: 0x00000030
+inst: 0x4072d1b3
+rs1_addr:   5
+rs1_data: 0x80c50f66
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x80c50f66
+wb_data: 0x80c50f66
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+```
+:::
+
+### slt 
+:::details
+:::code-tabs #slt
+@tab Constants 
+```scala
+  val ALU_SLT     = 9.U(EXE_FUN_LEN.W)
+  val ALU_SLTU    = 10.U(EXE_FUN_LEN.W)
+```
+@tab Core 
+```scala 
+
+      SLT   -> List(ALU_SLT, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      SLTU  -> List(ALU_SLTU, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_ALU),
+      SLTI  -> List(ALU_SLT, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_ALU),
+      SLTIU -> List(ALU_SLTU, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_ALU)
+
+
+      (exe_fun === ALU_SLT)  -> (op1_data.asSInt < op2_data.asSInt).asUInt,
+      (exe_fun === ALU_SLTU) -> (op1_data < op2_data).asUInt
+```
+@tab readme 
+```md 
+slt x3, x5, x7 
+0x0072a1b3 
+sltu x3, x5, x7 
+0x0072b1b3 
+slti x5, x7, 15 
+0x00f3a293 
+sltiu x5, x7, 15 
+0x00f3b293 
+```
+@tab hex 
+```txt 
+b3 
+a1
+72
+00
+b3 
+b1
+72
+00
+93 
+a2
+f3
+00
+93 
+b2
+f3
+00
+```
+@tab 测试
+```scala{4,6,8-10,16,18,20-22,28,32-34,40,44-46}
+----------- 对应指令slt x3, x5, x7
+pc_reg: 0x00000034
+inst: 0x0072a1b3
+rs1_addr:   5
+rs1_data: 0x00802303
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令sltu x3, x5, x7
+pc_reg: 0x00000038
+inst: 0x0072b1b3
+rs1_addr:   5
+rs1_data: 0x00802303
+rs2_addr:   7
+rs2_data: 0x00000000
+wb_addr, 0x03
+alu_out: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+----------- 对应指令slti x5, x7, 15
+pc_reg: 0x0000003c
+inst: 0x00f3a293
+rs1_addr:   7
+rs1_data: 0x00000000
+rs2_addr:  15
+rs2_data: 0x406287b3
+wb_addr, 0x05
+alu_out: 0x00000001
+wb_data: 0x00000001
+dmem.wen: 0x0
+dmem.wdata: 0x406287b3
+----------- 对应指令sltiu x5, x7, 15
+pc_reg: 0x00000040
+inst: 0x00f3b293
+rs1_addr:   7
+rs1_data: 0x00000000
+rs2_addr:  15
+rs2_data: 0x406287b3
+wb_addr, 0x05
+alu_out: 0x00000001
+wb_data: 0x00000001
+dmem.wen: 0x0
+dmem.wdata: 0x406287b3
+
+```
+:::
+
+### branch 
+:::details
+:::code-tabs #branch
+@tab Constants 
+```scala 
+  val BR_BEQ  = 11.U(EXE_FUN_LEN.W)
+  val BR_BNE  = 12.U(EXE_FUN_LEN.W)
+  val BR_BLT  = 13.U(EXE_FUN_LEN.W)
+  val BR_BGE  = 14.U(EXE_FUN_LEN.W)
+  val BR_BLTU = 15.U(EXE_FUN_LEN.W)
+  val BR_BGEU = 16.U(EXE_FUN_LEN.W)
+
+```
+@tab Core 
+```scala 
+  val pc_plus4  = pc_reg + 4.U(WORD_LEN.W)
+  val br_flg    = Wire(Bool())
+  val br_target = Wire(UInt(WORD_LEN.W))
+  val pc_next = MuxCase(
+    pc_plus4,
+    Seq(
+      br_flg -> br_target
+    )
+  )
+  pc_reg       := pc_next
+
+  val imm_b      = Cat(inst(31), inst(7), inst(30, 25), inst(11, 8))
+  val imm_b_sext = Cat(Fill(19, imm_b(11)), imm_b, 0.U(1.W))
+
+
+      BEQ   -> List(BR_BEQ, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BNE   -> List(BR_BNE, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BGE   -> List(BR_BLT, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BGEU  -> List(BR_BGE, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BLT   -> List(BR_BLTU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BLTU  -> List(BR_BGEU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X)
+
+  br_flg := MuxCase(
+    false.B,
+    Seq(
+      (exe_fun === BR_BEQ)  -> (op1_data === op2_data),
+      (exe_fun === BR_BNE)  -> !(op1_data === op2_data),
+      (exe_fun === BR_BLT)  -> (op1_data.asSInt < op2_data.asSInt),
+      (exe_fun === BR_BGE)  -> !(op1_data.asSInt < op2_data.asSInt),
+      (exe_fun === BR_BLTU) -> (op1_data < op2_data),
+      (exe_fun === BR_BGEU) -> !(op1_data < op2_data)
+    )
+  )
+
+
+  br_target := pc_reg + imm_b_sext
+  
+
+  printf(p"imm_b: 0x${Hexadecimal(imm_b)}\n")
+  printf(p"imm_b_sext: 0x${Hexadecimal(imm_b_sext)}\n")
+  printf(p"branch.flag: ${br_flg}\n")
+  printf(p"branch.target: 0x${Hexadecimal(br_target)}\n")
+```
+@tab readme 
+```md
+beq x4, x5, 12 
+0x00520663
+```
+@tab hex 
+```txt 
+63
+06
+52
+00
+```
+@tab 测试
+```bash{2,4-7,9,14,16} 
+----------- 对应指令beq x4, x5, 12
+pc_reg: 0x00000044
+inst: 0x00520663
+rs1_addr:   4
+rs1_data: 0x00000000
+rs2_addr:   5
+rs2_data: 0x00000001
+wb_addr, 0x0c
+alu_out: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000001
+imm_b: 0x006
+imm_b_sext: 0x0000000c
+branch.flag:  0
+branch.target: 0x00000050
+```
+:::
+
+
+### jmp 
+:::details
+:::code-tabs #jmp
+@tab Constants 
+```scala
+  val ALU_JALR = 17.U(EXE_FUN_LEN.W)
+
+  val OP1_PC  = 1.U(OP1_LEN.W)
+
+  val OP2_IMJ = 4.U(OP2_LEN.W)
+
+  val WB_PC      = 2.U(WB_SEL_LEN.W)
+```
+@tab Core 
+```scala 
+// move upstream
+val inst      = io.imem.inst
+
+val jmp_flg   = (inst === JAL || inst === JALR)
+
+// move up
+val alu_out   = Wire(UInt(WORD_LEN.W))
+
+
+  val pc_next = MuxCase(
+    pc_plus4,
+    Seq(
+      br_flg  -> br_target,
+      jmp_flg -> alu_out
+    )
+  )
+
+// val inst = io.imem.inst
+
+  val imm_j      = Cat(inst(31), inst(19, 12), inst(20), inst(30, 21))
+  val imm_j_sext = Cat(Fill(11, imm_j(19)), imm_j, 0.U(1.W))
+
+      JAL   -> List(ALU_ADD, OP1_PC, OP2_IMJ, MEN_X, REN_S, WB_PC),
+      JALR  -> List(ALU_JALR, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_PC)
+
+
+  val op1_data = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (op1_sel === OP1_RS1) -> rs1_data,
+      (op1_sel === OP1_PC)  -> pc_reg
+    )
+  )
+  val op2_data = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (op2_sel === OP2_RS2) -> rs2_data,
+      (op2_sel === OP2_IMI) -> imm_i_sext,
+      (op2_sel === OP2_IMS) -> imm_s_sext,
+      (op2_sel === OP2_IMJ) -> imm_j_sext
+    )
+  )
+
+  alu_out := MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+...
+      (exe_fun === ALU_JALR) -> ((op1_data + op2_data) & ~1.U(WORD_LEN.W))
+    )
+  )
+
+  val wb_data = MuxCase(alu_out, Seq(
+    (wb_sel === WB_MEM) -> io.dmem.read_data,
+    (wb_sel === WB_PC) -> pc_plus4
+  ))
+
+  printf(p"imm_j_sext: 0x${Hexadecimal(imm_b_sext)}\n")
+
+  printf(p"jmp.flag: ${jmp_flg}\n")
+
+```
+@tab readme 
+```md 
+jal x10, 8
+0x0080056f
+```
+@tab hex 
+```txt 
+6f
+05
+80
+00
+```
+@tab 测试
+```bash{8,10,17-18}
+----------- 对应指令jal x10, 8
+pc_reg: 0x00000048
+inst: 0x0080056f
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   8
+rs2_data: 0x00000000
+wb_addr, 0x0a
+alu_out: 0x00000050
+wb_data: 0x0000004c
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x005
+imm_b_sext: 0x0000000a
+imm_j_sext: 0x0000000a
+branch.flag:  0
+branch.target: 0x00000052
+jmp.flag:  1
+```
 
 :::
+
+### lui,auipc 
+:::details
+:::code-tabs #imm
+@tab Constants 
+```scala
+OP1_X在初始就该引入
+
+  val OP2_IMU = 5.U(OP2_LEN.W)
+```
+@tab Core 
+```scala
+  val imm_u         = inst(31, 12)
+  val imm_u_shifted = Cat(imm_u, Fill(12, 0.U))
+
+      LUI   -> List(ALU_ADD, OP1_X, OP2_IMU, MEN_X, REN_S, WB_ALU),
+      AUIPC -> List(ALU_ADD, OP1_PC, OP2_IMU, MEN_X, REN_S, WB_ALU)
+
+      (op2_sel === OP2_IMJ) -> imm_j_sext,
+      (op2_sel === OP2_IMU) -> imm_u_shifted
+
+  printf(p"imm_u: 0x${Hexadecimal(imm_u)}\n")
+  printf(p"imm_u_shifted: 0x${Hexadecimal(imm_u_shifted)}\n")
+
+```
+@tab readme 
+```md 
+auipc x2, 2
+0x00002117
+
+lui x2, 2
+0x00002137
+```
+
+@tab hex 
+```bash
+17
+21
+00
+00
+37
+21
+00
+00
+```
+@tab 测试
+```bash{2,8,10,17,28,30,37}
+----------- 对应指令auipc x2, 2
+pc_reg: 0x00000048
+inst: 0x00002117 
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00002048
+wb_data: 0x00002048
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x001
+imm_b_sext: 0x00000002
+imm_j_sext: 0x00000002
+imm_u: 0x00002
+imm_u_shifted: 0x00002000
+branch.flag:  0
+branch.target: 0x0000004a
+jmp.flag:  0
+----------- 对应指令lui x2, 2
+pc_reg: 0x0000004c
+inst: 0x00002137
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00002000
+wb_data: 0x00002000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x001
+imm_b_sext: 0x00000002
+imm_j_sext: 0x00000002
+imm_u: 0x00002
+imm_u_shifted: 0x00002000
+branch.flag:  0
+branch.target: 0x0000004e
+jmp.flag:  0
+```
+:::
+
+### csr 
+:::details
+:::code-tabs #csr
+@tab Constants
+```scala 
+  val ALU_COPY1 = 18.U(EXE_FUN_LEN.W) 
+  val OP1_IMZ = 3.U(OP1_LEN.W)
+  val WB_CSR = 3.U(WB_SEL_LEN.W)
+
+  val CSR_LEN = 3
+  val CSR_X = 0.U(CSR_LEN.W)
+  val CSR_W = 1.U(CSR_LEN.W)
+  val CSR_S = 2.U(CSR_LEN.W)
+  val CSR_C = 3.U(CSR_LEN.W)
+
+```
+@tab Core 
+```scala 
+  val csr_regfile = Mem(4096, UInt(WORD_LEN.W)) 
+
+  val csr_addr = inst(31,20)
+  val csr_rdata = csr_regfile(csr_addr) 
+
+  val imm_z = inst(19, 15)
+  val imm_z_uext = Cat(Fill(27, 0.U), imm_z)
+
+  val csignals = ListLookup(
+    inst, List(ALU_X, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_MEM, CSR_X), 
+
+      CSRRW -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_W),
+      CSRRWI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_W),
+      CSRRS -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_S),
+      CSRRSI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_S),
+      CSRRC -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
+      CSRRCI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
+
+  val exe_fun :: op1_sel :: op2_sel :: mem_wen :: rf_wen :: wb_sel :: csr_cmd ::Nil = csignals
+
+ val csr_wdata = MuxCase(0.U(WORD_LEN.W), Seq(
+    (csr_cmd === CSR_W) -> op1_data,
+    (csr_cmd === CSR_S) -> (csr_rdata | op1_data),
+    (csr_cmd === CSR_C) -> (csr_rdata &  ~op1_data),
+    ))
+  when(csr_cmd > 0.U) {
+    csr_regfile(csr_addr) := csr_wdata
+  }
+  val wb_data = MuxCase(alu_out, Seq(
+    (wb_sel === WB_MEM) -> io.dmem.read_data,
+    (wb_sel === WB_PC) -> pc_plus4,
+    (wb_sel === WB_CSR) -> csr_rdata,
+  ))
+  printf(p"csr_addr:  0x${Hexadecimal(csr_addr)}\n")
+  printf(p"csr_rdata: 0x${Hexadecimal(csr_rdata)}\n")
+
+  printf(p"csr_wdata: 0x${Hexadecimal(csr_rdata)}\n")
+
+  printf(p"imm_z: 0x${Hexadecimal(imm_z)}\n")
+  printf(p"imm_z_uext: 0x${Hexadecimal(imm_z_uext)}\n")
+```
+@tab readme 
+```md
+csrrc x2, mstatus, x0
+0x30003173
+
+csrrci x2, mstatus, 2
+0x30017173
+
+csrrs x2, mstatus, x0
+0x30002173
+
+csrrsi x2, mstatus, 2
+0x30016173
+
+csrrw x2, mstatus, x2
+0x30011173
+
+csrrwi x2, mstatus, 2
+0x30015173
+```
+@tab hex 
+```txt 
+73
+31
+00
+30
+73
+71
+01
+30
+73
+21
+00
+30
+73
+61
+01
+30 
+73
+11
+00
+30 
+73
+51
+01
+30 
+```
+@tab 测试 
+```bash{8,10,33,58,83,108,133}
+----------- 对应指令csrrc x2, mstatus, x0
+pc_reg: 0x00000050
+inst: 0x30003173
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr:   0x300
+csr_rdata: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00000000
+csr_wdata: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x181
+imm_b_sext: 0x00000302
+imm_j_sext: 0x00000302
+imm_u: 0x30003
+imm_u_shifted: 0x30003000
+imm_z: 0x00
+imm_z_uext: 0x00000000
+branch.flag:  0
+branch.target: 0x00000352
+jmp.flag:  0
+----------- 对应指令csrrci x2, mstatus, 2
+pc_reg: 0x00000054
+inst: 0x30017173
+rs1_addr:   2
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr:   0x300
+csr_rdata: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00000000
+csr_wdata: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x181
+imm_b_sext: 0x00000302
+imm_j_sext: 0x00000302
+imm_u: 0x30017
+imm_u_shifted: 0x30017000
+imm_z: 0x02
+imm_z_uext: 0x00000002
+branch.flag:  0
+branch.target: 0x00000356
+jmp.flag:  0
+----------- 对应指令csrrs x2, mstatus, x0
+pc_reg: 0x00000058
+inst: 0x30002173
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr:  0x300 
+csr_rdata: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00000000
+csr_wdata: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x181
+imm_b_sext: 0x00000302
+imm_j_sext: 0x00000302
+imm_u: 0x30002
+imm_u_shifted: 0x30002000
+imm_z: 0x00
+imm_z_uext: 0x00000000
+branch.flag:  0
+branch.target: 0x0000035a
+jmp.flag:  0
+----------- 对应指令csrrsi x2, mstatus, 2
+pc_reg: 0x0000005c
+inst: 0x30016173
+rs1_addr:   2
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr:   0x300
+csr_rdata: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00000000
+csr_wdata: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x181
+imm_b_sext: 0x00000302
+imm_j_sext: 0x00000302
+imm_u: 0x30016
+imm_u_shifted: 0x30016000
+imm_z: 0x02
+imm_z_uext: 0x00000002
+branch.flag:  0
+branch.target: 0x0000035e
+jmp.flag:  0
+----------- 对应指令csrrw x2, mstatus, x2
+pc_reg: 0x00000060
+inst: 0x30001173
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr:   0x300
+csr_rdata: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00000000
+csr_wdata: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x181
+imm_b_sext: 0x00000302
+imm_j_sext: 0x00000302
+imm_u: 0x30001
+imm_u_shifted: 0x30001000
+imm_z: 0x00
+imm_z_uext: 0x00000000
+branch.flag:  0
+branch.target: 0x00000362
+jmp.flag:  0
+----------- 对应指令csrrwi x2, mstatus, 2
+pc_reg: 0x00000064
+inst: 0x30015173
+rs1_addr:   2
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr:   0x300
+csr_rdata: 0x00000000
+wb_addr, 0x02
+alu_out: 0x00000000
+csr_wdata: 0x00000000
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x181
+imm_b_sext: 0x00000302
+imm_j_sext: 0x00000302
+imm_u: 0x30015
+imm_u_shifted: 0x30015000
+imm_z: 0x02
+imm_z_uext: 0x00000002
+branch.flag:  0
+branch.target: 0x00000366
+jmp.flag:  0
+```
+:::
+
+### ecall 
+:::details
+本次Chisel实现的CPU无运行环境，所以到trap_vector的迁移会触发异常
+:::code-tabs #ecall
+@tab Constants 
+```scala 
+  val CSR_ADDR_LEN = 12 
+
+  val CSR_E = 4.U(CSR_LEN.W) 
+```
+@tab Core 
+```scala 
+  val pc_next = MuxCase(
+    pc_plus4,
+    Seq(
+      br_flg           -> br_target,
+      jmp_flg          -> alu_out,
+      (inst === ECALL) -> csr_regfile(0x305)
+    )
+  )
+
+  // val csr_addr      = inst(31, 20)
+  // val csr_rdata     = csr_regfile(csr_addr)
+
+      ECALL  -> List(ALU_X, OP1_X, OP2_X, MEN_X, REN_X, WB_X, CSR_E)
+
+// 放在取指阶段，解析完ECALL之后
+  val csr_addr  = Mux(csr_cmd === CSR_E, 0x342.U(CSR_ADDR_LEN.W), inst(31, 20))
+  val csr_rdata = csr_regfile(csr_addr)
+  val csr_wdata = MuxCase(
+    0.U(WORD_LEN.W),
+    Seq(
+      (csr_cmd === CSR_W) -> op1_data,
+      (csr_cmd === CSR_S) -> (csr_rdata | op1_data),
+      (csr_cmd === CSR_C) -> (csr_rdata & ~op1_data),
+      (csr_cmd === CSR_E) -> 11.U(WORD_LEN.W)
+    )
+  )
+
+  when(csr_cmd > 0.U) {
+    csr_regfile(csr_addr) := csr_wdata
+  }
+
+```
+@tab readme 
+```md
+ecall
+0x00000073
+```
+@tab 测试
+```bash{8-9}
+-----------
+pc_reg: 0x00000068
+inst: 0x00000073
+rs1_addr:   0
+rs1_data: 0x00000000
+rs2_addr:   0
+rs2_data: 0x00000000
+csr_addr: 0x342
+csr_rdata: 0x0000000b
+wb_addr, 0x00
+alu_out: 0x00000000
+csr_wdata: 0x0000000b
+wb_data: 0x00000000
+dmem.wen: 0x0
+dmem.wdata: 0x00000000
+imm_b: 0x000
+imm_b_sext: 0x00000000
+imm_j_sext: 0x00000000
+imm_u: 0x00000
+imm_u_shifted: 0x00000000
+imm_z: 0x00
+imm_z_uext: 0x00000000
+branch.flag:  0
+branch.target: 0x00000068
+jmp.flag:  0
+-----------
+```
+:::
+
+## 正式测试：riscv-test
+
