@@ -313,8 +313,8 @@ description: 在实现单周期CPU之后，我们探索如何通过增加流水�
 #### 以现在的实现来处理一段具有分支冒险的程序
 :::details 
 :::code-tabs #brhazard
-@tab src\c\br_hazard.c 
-```c
+@tab src\c\br_hazard.c
+```c{2-4}
 int main() {
   asm volatile("addi a0, x0, 1");
   asm volatile("addi a1, x0, 2");
@@ -421,6 +421,8 @@ gtkwave test_run_dir/branch_hazard/Top.vcd
 :::details 波形图
 ![分支冒险现象](/assets/image/pipeline/pipeline-trouble-brhazard.png)
 
+- [ ] 现象：跳转目标[add a2, a0, a1]的操作数值被更新为2和3
+- [ ] 原因：不可执行的地址 `0xc`和`0x10`的指令也被执行了
 :::
 ### 2. 解决分支冒险  
 
@@ -447,6 +449,9 @@ gtkwave test_run_dir/branch_hazard/Top.vcd
 :::
 :::details 波形图
 ![分支冒险处理-增加气泡](/assets/image/pipeline/pipeline-feat-brhazard.png)
+
+- [x] 现象：跳转目标[add a2, a0, a1]的操作数值为1和2
+- [x] 初步解决分支冒险
 :::
 
 
@@ -480,6 +485,40 @@ int main() {
       }
   }
 ```
+@tab dump 
+```asm 
+
+data_hazard:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	00100513          	li	a0,1
+   4:	00000013          	nop
+   8:	00000013          	nop
+   c:	00a505b3          	add	a1,a0,a0
+  10:	00000013          	nop
+  14:	00000013          	nop
+  18:	00000013          	nop
+  1c:	00000013          	nop
+  20:	00100513          	li	a0,1
+  24:	00a505b3          	add	a1,a0,a0
+  28:	c0001073          	unimp
+  2c:	00000513          	li	a0,0
+  30:	00008067          	ret
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	fmsub.d	ft6,ft6,ft4,ft7,rmm
+   4:	2820                	fld	fs0,80(s0)
+   6:	29554e47          	fmsub.s	ft8,fa0,fs5,ft5,rmm
+   a:	3520                	fld	fs0,104(a0)
+   c:	332e                	fld	ft6,232(sp)
+   e:	302e                	fld	ft0,232(sp)
+	...
+```
 @tab 生成hex文件并测试
 ```bash
  cd src/c/
@@ -491,8 +530,10 @@ int main() {
 :::
 :::details 波形图
 ![id/wb阶段的分支冒险](/assets/image/pipeline/pipeline-trouble-data-hazard-id-wb.png)
+- [ ] c地址`add	a1,a0,a0`依赖0地址`li a0, 1`对a0的回写，出现冒险  
 
 ![id/exe阶段的分支冒险](/assets/image/pipeline/pipeline-trouble-data-hazard-id-exe.png)
+- [ ] 24地址`add a1, a0,a0`依赖20地址`li a0,1`对a0的回写数据，出现冒险  
 
 :::
 ### 3. 解决数据冒险  
@@ -501,7 +542,7 @@ int main() {
 :::details 
 :::code-tabs #feat-datahazard
 @tab IF 
-```scala 
+```scala{9,18,25} 
   val stall_flg = Wire(Bool()) 
 
   val if_pc_next = MuxCase(
@@ -531,7 +572,7 @@ int main() {
   )
 ```
 @tab ID 
-```scala 
+```scala{19,30-31,38,39}
   // 预先定义
   val mem_wb_data = Wire(UInt(WORD_LEN.W))
 
@@ -579,7 +620,11 @@ int main() {
 :::details 波形图
 
 ![id/wb阶段的分支冒险](/assets/image/pipeline/pipeline-feat-data-hazard-id-wb.png)
+- [x] c地址`add	a1,a0,a0`依赖0地址`li a0, 1`对a0的回写
+  - [x] 通过直通解决冒险  
 
 ![id/exe阶段的分支冒险](/assets/image/pipeline/pipeline-feat-data-hazard-id-exe.png)
-
+- [x] 24地址`add a1, a0,a0`依赖20地址`li a0,1`对a0的回写
+  - [x] 先通过一个气泡过渡到id/mem冒险
+  - [x] 再通过直通解决冒险  
 :::
