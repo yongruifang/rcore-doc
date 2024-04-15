@@ -543,6 +543,7 @@ class Memory(memoryFile: String="") extends Module {
 +++ 1
   val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
   val imm_s = Cat(inst(31,25), inst(11,7))
+  val imm_s_sext = Cat(Fill(20, imm_s(11)), imm_s)
 +++
   
   /*================ EX阶段 ==================*/
@@ -888,14 +889,14 @@ dmem.wdata: 0x00000000
 @tab Constants 
 ```scala 
   val REN_LEN = 2
-  val REN_X   = 0.U(MEN_LEN.W)
-  val REN_S   = 1.U(MEN_LEN.W)
-  val REN_V   = 2.U(MEN_LEN.W)
+  val REN_X   = 0.U(REN_LEN.W)
+  val REN_S   = 1.U(REN_LEN.W)
+  val REN_V   = 2.U(REN_LEN.W)
 
   val WB_SEL_LEN = 3
   val WB_X       = 0.U(WB_SEL_LEN.W)
-  val WB_ALU     = 0.U(WB_SEL_LEN.W)
-  val WB_MEM     = 1.U(WB_SEL_LEN.W)
+  val WB_ALU     = 1.U(WB_SEL_LEN.W)
+  val WB_MEM     = 2.U(WB_SEL_LEN.W)
 ```
 @tab Core 
 ```scala 
