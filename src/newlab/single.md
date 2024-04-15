@@ -1,10 +1,18 @@
 ---
-title: 1. 单周期实现
+title: 实现一个简单的单周期CPU
+shortTitle: 1. 单周期实现
 icon: circle-dot
 headerDepth: 3
-description: 单周期实现
+description: 基于Chisel实现一个单周期CPU, 从取指开始，用loadMemoryFromFile初始化内存，通过逐步实现各种类型的指令来体验制作一个简易CPU的过程，最终通过riscv-tests对我们实现的指令集进行测试。
 tag: [riscv, chisel]
 ---
+
+## 实验目的
+基于Chisel实现一个单周期CPU, 能识别处理RISC-V基本整数指令集 
+1. 使用hex文件初始化内存，测试驱动开发  
+2. 逐步实现RISC-V的基本整数指令集, 初步体验制作一个简易CPU的过程。
+3. 进一步实现管理控制和状态寄存器的CSR扩展指令Zicsr
+3. 通过riscv-tests对我们实现的基本整数指令集进行测试。
 
 ## 项目初始化
 :::details 初始化
@@ -1788,7 +1796,7 @@ jmp.flag:  0
 ```
 :::
 
-## 正式测试：使用riscv-tests
+## 标准测试：使用riscv-tests
 [工具包介绍](/trouble/riscv-test.html#下载编译)   
 上述测试，通过手动提供机器语言属于简单但不完整的测试，  
 最后我们应该使用工具包简易且全面地测试指令实现的正确性。  
