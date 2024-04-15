@@ -705,12 +705,32 @@ stall信号的计算依赖`id_rs1_addr`和`id_rs2_addr`,
 ## riscv-tests测试
 测试增加流水线特性之后，是否还能顺利通过riscv-tests测试？  
 :::code-tabs #riscvtest 
-@tag 运行测试
+@tab 运行测试
 ```bash 
-
+ sbt "testOnly single.RiscvtestSpec"
 ```
 @tab 测试结果 
 ```bash
-
+ sbt "testOnly single.RiscvtestSpec"
+[info] welcome to sbt 1.9.7 (Eclipse Adoptium Java 17.0.10)
+[info] loading settings for project pipeline-build-build-build from metals.sbt ...
+[info] loading project definition from /home/fangy/sandbox/pipeline/project/project/project
+[info] loading settings for project pipeline-build-build from metals.sbt ...
+[info] loading project definition from /home/fangy/sandbox/pipeline/project/project
+[success] Generated .bloop/pipeline-build-build.json
+[success] Total time: 2 s, completed Apr 15, 2024, 5:04:33 PM
+[info] loading settings for project pipeline-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /home/fangy/sandbox/pipeline/project
+[success] Total time: 1 s, completed Apr 15, 2024, 5:04:34 PM
+[info] loading settings for project root from build.sbt ...
+[info] set current project to %NAME% (in build file:/home/fangy/sandbox/pipeline/)
+[info] RiscvtestSpec:
+[info] - should pass rv32*i-p-*
+[info] Run completed in 20 seconds, 842 milliseconds.
+[info] Total number of tests run: 1
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 22 s, completed Apr 15, 2024, 5:04:57 PM
 ```
 :::
