@@ -816,7 +816,8 @@ dmem.wdata: 0x00000000
   val ALU_XOR     = 5.U(EXE_FUN_LEN.W)
 
   val OP1_LEN = 2
-  val OP1_RS1 = 0.U(OP1_LEN.W)
+  val OP1_X = 0.U(OP1_LEN.W)
+  val OP1_RS1 = 1.U(OP1_LEN.W)
 
   val OP2_LEN = 3
   val OP2_X   = 0.U(OP2_LEN.W)
@@ -902,7 +903,7 @@ dmem.wdata: 0x00000000
 ```scala 
   val csignals = ListLookup(
     inst,
-    List(ALU_X, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_MEM),
+    List(ALU_X, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
     Array(
       LW   -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_MEM),
       SW   -> List(ALU_ADD, OP1_RS1, OP2_IMS, MEN_S, REN_X, WB_X),
@@ -1171,10 +1172,10 @@ dmem.wdata: 0x406287b3
 
       BEQ   -> List(BR_BEQ, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
       BNE   -> List(BR_BNE, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
-      BGE   -> List(BR_BLT, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
-      BGEU  -> List(BR_BGE, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
-      BLT   -> List(BR_BLTU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
-      BLTU  -> List(BR_BGEU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X)
+      BGE   -> List(BR_BGE, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BGEU  -> List(BR_BGEU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BLT   -> List(BR_BLT, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      BLTU  -> List(BR_BLTU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X)
 
   br_flg := MuxCase(
     false.B,
@@ -1488,6 +1489,17 @@ CSR，控制与状态寄存器
       CSRRCI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
 
   val exe_fun :: op1_sel :: op2_sel :: mem_wen :: rf_wen :: wb_sel :: csr_cmd ::Nil = csignals
+
+  val op1_data = MuxCase(0.U(WORD_LEN.W), Seq(
+...
+  (op1_sel === OP1_IMZ) -> imm_z_uext
+))
+
+  alu_out := MuxCase(0.U(WORD_LEN.W), Seq(
+ ....
+  (exe_fun === ALU_COPY1) -> op1_data
+
+))
 
  val csr_wdata = MuxCase(0.U(WORD_LEN.W), Seq(
     (csr_cmd === CSR_W) -> op1_data,
@@ -1885,4 +1897,16 @@ class RiscvtestSpec extends AnyFreeSpec with ChiselScalatestTester {
   }
 }
 ```
+@tab Core 
+```scala 
+val gp = Output(UInt(WORD_LEN.W))
 
+io.exit := (pc_reg === 0x44.U(WORD_LEN.W))
+io.gp := regfile(3)
+```
+@tab Top 
+```scala
+val gp = Output(UInt(WORD_LEN.W))
+io.gp <> core.io.gp
+```
+:::

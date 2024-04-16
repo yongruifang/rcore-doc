@@ -60,6 +60,23 @@ export default navbar([
     ],
   },
   {
+    text: "实验2",
+    icon: "hammer",
+    prefix: "/newlab/",
+    children: [
+      {
+        text: "Lab1. 单周期",
+        icon: "tag",
+        link: "/newlab/single",
+      },
+      {
+        text: "Lab2. 流水线",
+        icon: "tag",
+        link: "/newlab/5-stage",
+      },
+      ]
+  },
+  {
     text: "理论",
     icon: "flask",
     prefix: "/theory/",
