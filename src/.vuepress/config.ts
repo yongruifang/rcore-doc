@@ -10,7 +10,7 @@ export default defineUserConfig({
 
   head: [
     ['meta', {name: 'google-site-verification', content: 'lOBM2JrQFkF_NCZ6FoQ4TP9j_OaIkwWZlnDIfgMqL7M'}]
-  ]
+  ],
 
   theme,
   // 和 PWA 一起启用
