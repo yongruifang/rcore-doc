@@ -323,9 +323,7 @@ val CSR_ADDR_LEN = 12
     regfile(wb_reg_wb_addr) := wb_reg_wb_data
   }
   /* exit信号*/
-  io.exit := (if_reg_pc === 0x44.U(WORD_LEN.W)) || (if_inst === 0x0.U(
-    WORD_LEN.W
-  ))
+  io.exit := (if_reg_pc === 0x44.U(WORD_LEN.W)) || (if_inst === 0x0.U( WORD_LEN.W)) || (id_reg_inst === UNIMP)
   io.gp   := regfile(3)
 ```
 :::
@@ -497,6 +495,8 @@ gtkwave test_run_dir/branch_hazard/Top.vcd
 ```scala 
   // 0x13 means ADDI x0,x0,0 , use as NOP
   val BUBBLE = 0x13.U(WORD_LEN.W)
+  
+  val UNIMP - 0xc0001073L.U(WORD_LEN.W) 
 ```
 @tab IF 
 ```scala 
