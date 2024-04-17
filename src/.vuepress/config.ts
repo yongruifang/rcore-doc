@@ -9,7 +9,8 @@ export default defineUserConfig({
   description: "vuepress-theme-hope 的文档演示",
 
   head: [
-    ['meta', {name: 'google-site-verification', content: 'lOBM2JrQFkF_NCZ6FoQ4TP9j_OaIkwWZlnDIfgMqL7M'}]
+    ['meta', {name: 'google-site-verification', content: 'lOBM2JrQFkF_NCZ6FoQ4TP9j_OaIkwWZlnDIfgMqL7M'}],
+    ['meta', {name: 'baidu-site-verification', content: 'codeva-3OIj4Niri5'}],
   ],
 
   theme,
