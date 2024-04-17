@@ -371,6 +371,18 @@ int main() {
 	rm -f $@.o 
 	rm -f $@ 
 	rm -f $@.bin
+
+
+// 64版本
+%: %.c
+	riscv64-unknown-elf-gcc -O2 -march=rv32i -mabi=ilp32 -c -o $@.o $<
+	riscv64-unknown-elf-ld -m elf32lriscv -b elf32-littleriscv $@.o -Ttext=0x0 -o $@
+	riscv64-unknown-elf-objcopy -O binary $@ $@.bin 
+	od -An -tx1 -w1 -v $@.bin > ./hex/$@.hex 
+	riscv64-unknown-elf-objdump -b elf32-littleriscv -D $@ > ./dump/$@.dump
+	rm -f $@.o 
+	rm -f $@ 
+	rm -f $@.bin 
 ```
 @tab dump文件
 ```asm 
