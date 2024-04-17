@@ -757,3 +757,5 @@ stall信号的计算依赖`id_rs1_addr`和`id_rs2_addr`,
 [success] Total time: 22 s, completed Apr 15, 2024, 5:04:57 PM
 ```
 :::
+
+[b站录屏](https://www.bilibili.com/video/BV1om421x7aJ)
