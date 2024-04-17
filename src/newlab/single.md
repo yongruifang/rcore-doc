@@ -1910,3 +1910,5 @@ val gp = Output(UInt(WORD_LEN.W))
 io.gp <> core.io.gp
 ```
 :::
+
+[b站录屏](https://www.bilibili.com/video/BV1Ww4m1m74t/)

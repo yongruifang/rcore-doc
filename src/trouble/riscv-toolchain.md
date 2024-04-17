@@ -20,7 +20,8 @@ riscv32-unknown-elf-gcc --version # 测试
 
 :::tip 如果wget下载到中途，想中断怎么做?
 1. <kbd>Ctrl</kbd>+<kbd>Z</kbd> 暂停  
-2. `wget -c https://mirror.iscas.ac.cn/riscv-toolchains/release/riscv-collab/riscv-gnu-toolchain/LatestRelease/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.12.14-nightly.tar.gz`  
+2. `wget`**续传**: 添加<kbd>-c</kbd>选项  
+`wget -c https://mirror.iscas.ac.cn/riscv-toolchains/release/riscv-collab/riscv-gnu-toolchain/LatestRelease/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.12.14-nightly.tar.gz`  
 :::
 
 ## 安装特权指令集1.7版本的GNU⼯具链 

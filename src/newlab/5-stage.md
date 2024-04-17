@@ -30,8 +30,14 @@ description: 在实现单周期CPU之后，我们探索如何通过增加流水�
 :::details Core.scala
 添加流水线寄存器。并为对应阶段的寄存器添加前缀
 :::code-tabs #reg
+@tab Constans 
+```scala{2}
+val WORD_LEN = 32 
+val ADDR_LEN = 5
+val CSR_ADDR_LEN = 12
+```
 @tab 定义
-```scala
+```scala{9,13-18,35,39}
   val regfile     = Mem(32, UInt(WORD_LEN.W))
   val csr_regfile = Mem(4096, UInt(WORD_LEN.W))
   /* 流水线寄存器 */
@@ -40,7 +46,7 @@ description: 在实现单周期CPU之后，我们探索如何通过增加流水�
   val id_reg_inst = RegInit(0.U(WORD_LEN.W))
   // ID/EX 状态保存
   val exe_reg_pc            = RegInit(0.U(WORD_LEN.W))
-  val exe_reg_wb_addr       = RegInit(0.U(WORD_LEN.W))
+  val exe_reg_wb_addr       = RegInit(0.U(ADDR_LEN.W))
   val exe_reg_op1_data      = RegInit(0.U(WORD_LEN.W))
   val exe_reg_op2_data      = RegInit(0.U(WORD_LEN.W))
   val exe_reg_rs2_data      = RegInit(0.U(WORD_LEN.W))
@@ -74,14 +80,15 @@ description: 在实现单周期CPU之后，我们探索如何通过增加流水�
 ```
 @tab IF
 ```scala 
-  val if_reg_pc   = RegInit(START_ADDR)
-  val if_inst       = io.imem.inst
-  val if_pc_plus4   = if_reg_pc + 4.U(WORD_LEN.W)
 // 预定义
   val exe_br_flg    = Wire(Bool())
   val exe_br_target = Wire(UInt(WORD_LEN.W))
   val exe_jmp_flg   = Wire(Bool())
   val exe_alu_out   = Wire(UInt(WORD_LEN.W))
+
+  val if_reg_pc   = RegInit(START_ADDR)
+  val if_inst       = io.imem.inst
+  val if_pc_plus4   = if_reg_pc + 4.U(WORD_LEN.W)
 
   val if_pc_next = MuxCase(
     if_pc_plus4,
@@ -94,6 +101,7 @@ description: 在实现单周期CPU之后，我们探索如何通过增加流水�
   if_reg_pc    := if_pc_next
   io.imem.addr := if_reg_pc
 
+// 传递
   id_reg_pc   := if_reg_pc
   id_reg_inst := if_inst
 ```
@@ -482,13 +490,16 @@ gtkwave test_run_dir/branch_hazard/Top.vcd
 ```scala 
   // id_reg_inst := if_inst
   id_reg_inst := Mux((exe_br_flg || exe_jmp_flg), BUBBLE, if_inst)
+
 ```
 @tab ID 
 ```scala 
-  val id_inst     = Mux((exe_br_flg || exe_jmp_flg), BUBBLE, id_reg_inst)
+  val id_inst     = Mux((exe_br_flg || exe_jmp_flg), BUBBLE, id_reg_inst) 
   val id_rs1_addr = id_inst(19, 15)
   val id_rs2_addr = id_inst(24, 20)
   val id_wb_addr  = id_inst(11, 7)
+
+... // 以此类推，后续对id_reg_inst的引用 批量替换为 id_inst
 ```
 :::
 :::details 波形图
