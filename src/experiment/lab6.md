@@ -737,3 +737,156 @@ object Alu {
 - [x] x10寄存器，数值在下一个周期变为0A，写回阶段成功执行。
 :::
 
+
+## FPGA原型验证
+### 1. MMIO
+*[MMIO]: Memory-mapped I/O
+
+> MMIO 是CPU与外设交互的一种方法，通过将外设相关的寄存器映射到处理器的内存地址中来访问。当CPU需要访问外设时只需要通过访存指令访问外设对应的寄存器即可，不需要为外设添加额外的指令。
+
+### 2. riscv-mini的调整
+*[BRAM]: Block RAM
+项目本身没有外设以及物理的内存模块，而是通过软件访问的内存在仿真环境中运行程序。  
+调整riscv-mini，为其添加外设以及内存模块，让其能在FPGA上运行程序。
+在外设部分为其添加:  
+- 串口
+- LED控制器
+- 物理内存通过FPGA上的 BRAM 实现。
+
+![添加外设](/assets/image/lab6/添加外设.png =x300)
+
+
+<h4>2.1 内存映射</h4>
+
+- UART共四个端口，分别用于表示IO的data和valid。
+- LED共一个端口
+映射的内存地址：
+```txt
+UART:
+read_valid  0x1000_0000
+read_data   0x1000_0004
+write_valid 0x1000_0008
+write_data  0x1000_000c
+```
+
+UART模块的波特率设置为57600，采用轮询的方式。 
+::: details 当CPU想要向UART发送数据  
+首先循环读取write_valid，判断UART是否可写。当true，则将数据写入write_data即可。
+当CPU想要读取UART的数据时，步骤相近。
+:::
+
+LED控制器，设定通过<abbr title="例如写入1100, 表示4号和3号灯亮，2号和1号灯灭">位模式</abbr>来表示FPGA板上四个灯的亮灭。
+
+<h4>2.2 程序准备</h4>
+
+::: details 拟定测试UART的回显程序
+- 作用是循环从串口中读取数据，将读取到的数据通过串口发送出去。 
+:::code-tabs #shell
+@tab echo.s
+```s
+  .text # Define beginning of text section
+  .global _start # Define entry _start
+
+_start:
+  li x1,0x10000000 #read valid 0x10000000
+  li x2,0x10000004 #read data 0x10000004
+  li x3,0x10000008 #write ready 0x10000008
+  li x4,0x1000000C #write data 0x1000000C
+ECHO_Loop:
+CheckReadValid:
+  lb x5,0(x1)
+  beq x5,x0,CheckReadValid
+  lb x6,0(x2) #if valid == 1 read data else loop
+CheckWriteReady:
+  lb x5,0(x3)
+  beq x5,x0,CheckWriteReady #if rady == 1 write data else loop
+  sb x6,0(x4)
+  j ECHO_Loop
+```
+:::
+
+
+程序通过工具链最后转换成hex文件，  
+当使用FPGA上的BRAM时，需要<b><u>从hex转换成coe格式</u></b>对内存初始化。
+
+::: details 拟定测试LED的控制程序
+- 程序功能：根据UART的输入来控制亮灭  
+- 具体行为：初始化写入1111，代表全亮。随后轮询UART，实时改变LED组的亮灭状态。
+:::code-tabs #shell 
+@tab blink.s
+```s
+  .text
+  .global _start
+_start:
+  li t0,0x10000000 #read valid 0x10000000
+  li t1,0x10000004 #read data 0x10000004
+  li t2,0x10010000 #LED state
+#init
+  addi t3,x0,15
+sw t3,0(t2)
+LOOP:
+CheckReadValid:
+  lb t3,0(t0)
+  beq t3,x0,CheckReadValid
+  lb t4,0(t1) #if valid == 1 read data else loop
+# change led state
+  addi t4,t4,-48 #char to int
+  addi t5,x0,1 #select led
+  sll t5,t5,t4
+  sw t5,0(t2)
+  j LOOP
+```
+:::
+
+<h3>2.3 FPGA综合与实现</h3>
+
+- 板子: 采用ARTY A7-35T 
+- 源文件导入Tile.v文件，使用如下的约束文件，在约束文件中分配引脚。  
+
+::: details 具体约束
+:::code-tabs #shell 
+@tab Arty-Master.xdc
+```xdc
+# Clock signal
+set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clock }]; #IO_L12P_T1_MRCC_35 Sch=gclk[100]
+create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports { clock }];
+# Buttons
+set_property -dict { PACKAGE_PIN D9 IOSTANDARD LVCMOS33 } [get_ports { reset }]; #IO_L6N_T0_VREF_16 Sch=btn[0]
+
+# USB-UART Interface
+set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports { io_txd }]; #IO_L19N_T3_VREF_16 Sch=uart_rxd_out
+set_property -dict { PACKAGE_PIN A9 IOSTANDARD LVCMOS33 } [get_ports { io_rxd }]; #IO_L14N_T2_SRCC_16 Sch=uart_txd_in
+# LEDs
+set_property -dict { PACKAGE_PIN H5 IOSTANDARD LVCMOS33 } [get_ports { io_ledState[0] }]; #IO_L24N_T3_35 Sch=led[4]
+set_property -dict { PACKAGE_PIN J5 IOSTANDARD LVCMOS33 } [get_ports { io_ledState[1] }]; #IO_25_35 Sch=led[5]
+set_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports { io_ledState[2] }]; #IO_L24P_T3_A01_D17_14 Sch=led[6]
+set_property -dict { PACKAGE_PIN T10 IOSTANDARD LVCMOS33 } [get_ports { io_ledState[3] }]; #IO_L24N_T3_A00_D16_14 Sch=led[7]
+```
+:::
+
+在Vivado中实例化BRAM。在IP Catalog中选择Block Memory Generator, 创建BRAM。
+
+设置接口类型为AXI4。
+
+在PortA中设置BRAM的宽度和深度，注意板上的BRAM资源有限。  
+在other中选择对应的coe文件初始化，取消勾选 Enable Safety Circuit
+
+
+然后进行综合、实现、生成比特流。
+
+写入FPGA后，通过串口和FPGA通信  
+期望行为：
+
+![消息回显](/assets/image/lab6/消息回显.png =x300)
+
+换成blink程序后的期望结果：
+
+- 初始点灯  
+
+![亮四个灯](/assets/image/lab6/亮灯.png =x200)
+
+- 发送数字 **（从0算起）** : 发送2代表让第三个灯亮  
+
+![控制灯亮](/assets/image/lab6/控制灯.png =x100)
+
+
