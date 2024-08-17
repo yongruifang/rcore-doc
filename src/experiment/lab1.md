@@ -218,9 +218,8 @@ Data Symbol Table
 需要对十个数进行排序，要求在sort函数中调用swap，使用栈的思想，在函数嵌套时保存$a的值。
 > 注意: 需要将SP初始化为内存最高地址，否则初始化为0，使得SP-1将会指向0xffffffff，导致超出winmips默认的内存空间。 
 
-::: info 最后终端的打印结果应该是:
-![终端输出](/assets/image/lab1/sort.png)
-:::
+![最后的终端输出](/assets/image/lab1/sort.png)
+
 ::: details 代码实现
 :::code-tabs #shell
 @tab bubble_sort.s

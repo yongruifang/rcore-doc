@@ -1,5 +1,7 @@
+import {viteBundler} from "@vuepress/bundler-vite"
 import { defineUserConfig } from "vuepress";
 import theme from "./theme.js";
+import abbr from "markdown-it-abbr";
 
 export default defineUserConfig({
   base: "/",
@@ -16,7 +18,13 @@ export default defineUserConfig({
   ],
 
   theme,
+  extendsMarkdown: md => {
+    md.use(abbr)
+  },
+  bundler: viteBundler({
+    viteOptions: {},
+    vuePluginOptions: {},
+  })
   // 和 PWA 一起启用
   // shouldPrefetch: false,
-
 });

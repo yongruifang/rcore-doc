@@ -1,10 +1,52 @@
 ---
-title: 7. riscv-mini新增MDU模块
+title: 7. 新增M扩展指令集
 icon: circle-plus
 headerDepth: 3
 description: 基于riscv-mini, 新增MDU，并进行功能验证。
 tag: [riscv-mini, chisel]
 ---
+## 引言
+要实现RISC-V的定制或扩展指令，需要从三个方面入手：  
+（1）定义指令集，确保兼容已有实现的指令编码；  
+（2）修改软件，主要涉及riscv-gnu-toolchain工具包中的GCC和binutils工具；  
+（3）修改硬件，主要包括对流水线功能部件的改动和扩充。  
+<!-- <abbr title="Multiplication Division Unit, 乘除法单元">MDU</abbr>模块的作用 -->
+*[MDU]: Multiplication Division Unit 
+
+MDU 模块的功能是完成乘法、除法、取余相关的运算。  
+
+![指令位配置](/assets/image/lab7/指令位配置.png "指令位配置" =x100)
+<!-- <figure style="background: red;"> -->
+<!--   <img src="/assets/image/lab7/指令位配置.png" height="100" style="margin-left: 0px;"> -->
+<!--   <figcaption style="margin-left: 150px;">指令位配置</figcaption> -->
+<!-- </figure> -->
+<!-- <img src="/assets/image/lab7/指令位配置.png" height="100" ></img> -->
+<!-- ![指令位配置](/assets/image/lab7/指令位配置.png "指令位配置" =x100) -->
+根据<u>有无符号</u>和<u>位数</u>的不同，最终产生了8条<abbr title="所有指令均为R型指令">相关指令</abbr>：
+<div style="width: 75%; margin-left: auto;"> 
+
+| 指令 | 行为 |
+| ------ | ----------- |
+| mul | 有符号数相乘，保存较低的 32 位 |
+| mulh | 有符号数相乘，保存较高的 32 位 |
+| mulhsu | 有符号数乘无符号数，保存较高的 32 位 |
+| mulhu | 无符号数相乘 ，保存较高的 32 位 |
+| div |有符号数相除  |
+| divu |无符号数相除 |
+| rem  |有符号数取余 |
+| remu |无符号数取余 |
+  
+</div>
+
+:::info 针对除法
+还需要考虑异常情况下的输出规定，比如在除以0和除法溢出时的处理。
+| 条件 | 被除数 | 除数 | divu | remu | div | rem |
+| --- | --- | --- | --- | --- | --- | --- |
+|除以0 |x | 0 | $2^{xlen-1}$ | x | -1 | x | 
+| 溢出(有符号) | $-2^{xlen-1}$ | -1 | | | $-2^{xlen-1}$ | 0 |
+:::
+
+
 ## 目标
 - 在riscv-mini的基础上新增MDU模块
 - 编写程序，验证功能。
@@ -21,249 +63,39 @@ tag: [riscv-mini, chisel]
 - 功能： 将rs1高16位和rs2低16位拼接成32位，保存到rd
 
 ## 步骤
-::: important 只演示如何添加有符号数乘法的功能。 
-:::
-### 1 新增模块MDU(Multiplication Division Unit) 
-:::details mini/Mdu.scala
-- [x] 定义操作码  
-- [x] 当mdu_op为MDU_MUL时,进行乘法运算
-:::code-tabs #shell
-@tab Mdu 
-```scala{7-8,28-35}
-package mini
-
-import chisel3._
-import chisel3.util._
-
-object Mdu {
-  val MDU_XXX = 0.U(3.W)
-  val MDU_MUL = 1.U(3.W)
-}
-
-class MduIO(width: Int) extends Bundle {
-  val mdu_op = Input(UInt(3.W))
-  val rs1 = Input(UInt(width.W))
-  val rs2 = Input(UInt(width.W))
-  val out = Output(UInt(width.W))
-
-}
-
-import mini.Mdu._
-
-trait Mdu extends Module {
-  def width: Int
-  val io: MduIO
-}
-
-class MduSimple(val width: Int) extends Mdu {
-  val io = IO(new MduIO(width))
-  io.out := MuxLookup(
-    io.mdu_op,
-    0.U
-  )(
-    Seq(
-      MDU_MUL -> (io.rs1.asSInt * io.rs2.asSInt).asUInt
-    )
-  )
-}
-```
-:::
-
-### 2 添加BitPat, 以及译码逻辑的补充 
-新增乘法指令执行时的控制信号。  
-:::details 
-- [x] 新增MDU_OPT译码信号
-- [x] 在映射中添加MUL指令对应的译码，
-  - [x]  PC_4 
-  - [x]  操作数为RS1和RS2 
-  - [x]  不使用立即数以及ALU 
-  - [x]  非分支指令 
-  - [x]  不需要冲刷流水线 
-  - [x]  不需要访存 
-  - [x]  在写回阶段将ALU流水寄存器中的 数值写会到寄存器文件当红在哪个、
-  - [x]  非CSR指令、
-  - [x]  非异常指令、
-  - [x]  MDU操作码为MDU_MUL 
-- [x] 添加mdu_op的输出
+### 1. 常量模块补充MDU单元
+八条指令理论上只需要3bit的信号即可识别，添加MDU_XXX是为了表示非MDU指令
 :::code-tabs #shell 
-@tab Instructions
+@tab MDU常量单元
 ```scala 
-def MUL = BitPat("b0000001??????????000?????0110011")
-```
-@tab Control 
-```scala{7,11,16,22}
-++
-import Mdu._ 
-++
-
-val default = List(PC_4  , A_XXX,  B_XXX, IMM_X, ALU_XXX   , BR_XXX, N, ST_XXX, LD_XXX, WB_ALU, N, CSR.N, Y,
-+++
-MDU_XXX)
-+++
-
-++
-MUL  -> List(PC_4  , A_RS1,  B_RS2, IMM_X, ALU_XXX   , BR_XXX, N, ST_XXX, LD_XXX, WB_ALU, Y, CSR.N, N, MDU_MUL)
-++
-
-class ControlSignal extends Bundle {
-+++
-  val mdu_op = Output(UInt(3.W))
-+++
-}
-
-class Control extends Module {
-+++
-  io.mdu_op := ctrlSignals(13)
-+++
+object Mdu {
+ val MDU_FUN_LEN = 4
+ val MDU_XXX = 0.U(MDU_FUN_LEN.W)
+ val MDU_MUL = 1.U(MDU_FUN_LEN.W)
+ val MDU_MULH = 2.U(MDU_FUN_LEN.W)
+ val MDU_MULHSU = 3.U(MDU_FUN_LEN.W)
+ val MDU_MULHU = 4.U(MDU_FUN_LEN.W)
+ val MDU_DIV = 5.U(MDU_FUN_LEN.W)
+ val MDU_DIVU = 6.U(MDU_FUN_LEN.W)
+ val MDU_REM = 7.U(MDU_FUN_LEN.W)
+ val MDU_REMU = 8.U(MDU_FUN_LEN.W)
 }
 ```
 :::
 
-### 3. config新增配置项
-:::details 
-:::code-tabs #config 
-@tab Core 
-```scala{4} 
-case class CoreConfig(
-  xlen:       Int,
-  makeAlu:    Int => Alu = new AluSimple(_),
-  makeMdu:    Int => Mdu = new MduSimple(_),
-  makeBrCond: Int => BrCond = new BrCondSimple(_),
-  makeImmGen: Int => ImmGen = new ImmGenWire(_))
-```
-@tab Config 
-```scala{8}
-object MiniConfig {
-  def apply(): Config = {
-    val xlen = 32
-    Config(
-      core = CoreConfig(
-        xlen = xlen,
-        makeAlu = new AluArea(_),
-        makeMdu = new MduSimple(_),
-        makeBrCond = new BrCondArea(_),
-        makeImmGen = new ImmGenWire(_)
-      ),
-      cache = CacheConfig(
-        nWays = 1,
-        nSets = 256,
-        blockBytes = 4 * (xlen / 8) // 4 * 32 bits = 16B
-      ),
-      nasti = NastiBundleParameters(
-        addrBits = 32,
-        dataBits = 64,
-        idBits = 5
-      )
-    )
-  }
-}
 
-```
-:::
+### 2. 执行阶段
 
-### 3. Datapath添加MDU模块以及相关的线路。 
-:::details 
-- [x] 新增Mdu实例化模块
-- [x] Mdu输入信号的连接
-- [x] 根据控制信号选择对于ALU流水线寄存器的写入数值，
-    - [x] 当没有执行乘法指令时写入的是alu输出的数据，
-    - [x] 当执行乘法指令写入的是mdu输出的数据。  
-:::code-tabs #datapath 
-@tab Datapath
-```scala{2,5-7,13-14}
+参考手册上对于MDU各个指令的运算规则
 
-  val mdu = Module(conf.makeMdu(conf.xlen))
-
-  // MDU operations
-  mdu.io.rs1 := rs1
-  mdu.io.rs2 := rs2
-  mdu.io.mdu_op := io.ctrl.mdu_op
-
-  // Pipelining
-  when(reset.asBool || !stall && csr.io.expt) {
-    st_type := 0.U
-    ld_type := 0.U
-    wb_en := false.B
-    csr_cmd := 0.U
-    illegal := false.B
-    pc_check := false.B
-  }.elsewhen(!stall && !csr.io.expt) {
-    ew_reg.pc := fe_reg.pc
-    ew_reg.inst := fe_reg.inst
-    // ew_reg.alu := alu.io.out
-    ew_reg.alu := Mux(io.ctrl.mdu_op === Mdu.MDU_XXX, alu.io.out, mdu.io.out)
-    ew_reg.csr_in := Mux(io.ctrl.imm_sel === IMM_Z, immGen.io.out, rs1)
-    st_type := io.ctrl.st_type
-    ld_type := io.ctrl.ld_type
-    wb_sel := io.ctrl.wb_sel
-    wb_en := io.ctrl.wb_en
-    csr_cmd := io.ctrl.csr_cmd
-    illegal := io.ctrl.illegal
-    pc_check := io.ctrl.pc_sel === PC_ALU
-  }
-
-```
-:::
-
-### 4 重新编译riscv-mini
-```bash:no-line-numbers
-make clean 
-make 
-make verilator
-
-```
-
-### 5. 测试
-:::code-tabs #test
-@tab mul.s
-```asmatmel
-.text 
-.global _start
-
-_start:
-  li x5, 3 
-  li x6, 11
-  mul x7, x5, x6
-
-exit:
-  csrw mtohost, 1 
-  j exit 
-
-.end
-```
-@tab 编译
-```bash:no-line-numbers
-riscv-unknown-elf-gcc -nostdlib -Ttext=0x200 -o mul mul.s
-riscv32-unknown-elf-gcc -nostdlib -Ttext=0x200 -o mul mul.s
-elf2hex 16 2048 mul > mul.hex
-./VTile mul.hex mul.vcd
-gtkwave mul.vcd
-```
-@tab 反汇编
-```bash
-mul:     file format elf32-littleriscv
-
-
-Disassembly of section .text:
-
-00000200 <_start>:
- 200:   00300293                li      t0,3
- 204:   00b00313                li      t1,11
- 208:   026283b3                mul     t2,t0,t1
-
-0000020c <exit>:
- 20c:   7800d073                csrwi   mtohost,1
- 210:   ffdff06f                j       20c <exit>
-```
-:::
-
-:::details 波形观察
-- [x] mul t2,t0,t1 指令对应026283b3
-- [x] Mdu模块的rs1,rs2输入符合预期
-- [x] Mdu模块的输出符合预期
-- [x] t2, 也就是x7寄存器最终写入33，乘法指令有效
-![mul.vcd](/assets/image/lab7/vcd-mult.png)
-:::
-
-
+|指令|运算规则|<div style="width: 250px;">表达式</div>|
+|---|---|---|
+|MUL|执行 rs1，rs2 的乘法操作，忽略算术溢出，只将低 XLEN 位的值写入 rd 寄存器中| (op1.asSInt * op2.asSInt)(31, 0) |
+|MULH| 执行 rs1，rs2 的乘法操作，但在执行操作之前，需要将 rs1，rs2 分别进行 2 倍 XLEN 位的有符号数扩展，将计算结果的高 XLEN 位写入 rd 寄存器| (op1.asSInt * op2.asSInt)(63, 32)| 
+|DIV| 执行 rs1/rs2 操作，结果写入寄存器。在执行除法操作前，将 rs1，rs2 寄存器进行 XLEN 位的有符号数扩展| (op1.asSInt / op2.asSInt)(31, 0) <br/>当除数为0 为(-1.S(32.W)).asUInt| 
+|DIVU| 与 DIV 类似，但在执行除法操作前，将 rs1，rs2 进行 XLEN 位的无符号位扩展| op1.asUInt / op2.asUInt <br/>当除数为 0 为(-1.S(32.W)).asUInt|
+|MULHU |与 MULH 类似，但在执行乘法指令之前，将rs1，rs2 进行 2 倍 XLEN 位的无符号数扩展| (op1.asUInt * op2.asUInt)(63, 32) |
+|MULHSU |和 MULH 指令类似，但在执行乘法指令之前， 将 rs1 进行 2 倍 XLEN 位的有符号数扩展，将 rs2 进行 2 倍 XLEN 位的无符号数扩展| (op1.asSInt * op2.asUInt)(63, 32) |
+|REM |执行 rs1%rs2 操作，将结果写入 rd 操作，但在执行取余操作之前，将 rs1，rs2 进行 XLEN 位的有符号数扩展| (op1.asSInt % op2).asUInt <br/> 当除数为 0 为 op1|
+|REMU|和 REM 指令类似，但在执行取余操作之前，将 rs1，rs2 进行 XLEN 位的无符号数扩展| op1 % op2 <br/>当除数为 0 为 op1|
 

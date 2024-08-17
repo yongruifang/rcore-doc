@@ -63,7 +63,6 @@ export default hopeTheme({
       category:"General",
       categoryId:"DIC_kwDOLI6uK84Celic",
     },
-
     components: {
       components: ["Badge", "VPCard"],
     },
@@ -78,6 +77,7 @@ export default hopeTheme({
       demo: true,
       figure: true,
       imgLazyload: true,
+      imgMark: true,
       imgSize: true,
       include: true,
       tasklist: true,
@@ -115,7 +115,7 @@ export default hopeTheme({
       // gfm: true,
 
       // 在启用之前安装 katex
-      // katex: true,
+      katex: true,
 
       // 在启用之前安装 mathjax-full
       // mathjax: true,
@@ -138,8 +138,14 @@ export default hopeTheme({
       // install sandpack-vue3 before enabling it
       // sandpack: true,
     },
+    shiki: {
+      themes: {
+        light: "min-light",
+        dark: "min-dark",
+      }
+    },
 
-    // 如果你需要 PWA。安装 vuepress-plugin-pwa2 并取消下方注释
+    // 如果你需要 PWA。安装 vuepress-plugin-pwa 并取消下方注释
     // pwa: {
     //   favicon: "/favicon.ico",
     //   cacheHTML: true,

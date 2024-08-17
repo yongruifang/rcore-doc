@@ -9,23 +9,28 @@ tag: [chisel, scala, riscv]
 [scala3-book](https://docs.scala-lang.org/zh-cn/scala3/book/)
 
 ## <HopeIcon icon="/assets/image/chisel-tool.svg" size="2rem" />Chisel
-[**online Chisel Bootcamp**](https://mybinder.org/v2/gh/freechipsproject/chisel-bootcamp/master): 在线互动教程
 
-[Cookbooks](https://www.chisel-lang.org/docs/cookbooks):chisel-lang的官方指南
 
-[Digital Design with Chisel](http://www.imm.dtu.dk/~masca/chisel-book.html): chisel-lang的说明书
 
-[Explanations](https://www.chisel-lang.org/docs/explanations): 学习chisel-lang的设计理念
+[Cookbooks](https://www.chisel-lang.org/docs/cookbooks):chisel的官方文档
 
 [API Documentation](https://www.chisel-lang.org/api) : chisel的API文档
 
+[Explanations](https://www.chisel-lang.org/docs/explanations): chisel的设计理念
+
 [Resources](https://www.chisel-lang.org/docs/resources): 官方介绍的资源
 
-[Appendix](https://www.chisel-lang.org/docs/appendix): 外围知识
+[Official Style Guide](https://www.chisel-lang.org/docs/developers/style): 官方推荐的代码风格
 
-[Developers](https://www.chisel-lang.org/docs/developers)参与Chisel的开源
+[Digital Design with Chisel](http://www.imm.dtu.dk/~masca/chisel-book.html): 由 **schoeberl** 教授编写的教材
+
+[Github:schoeberl/chisel-lab](https://github.com/schoeberl/chisel-lab)
+
+[Github:schoeberl/chisel-examples](https://github.com/schoeberl/chisel-examples)
 
 [CSDN博客-吃透Chisel语言](https://blog.csdn.net/weixin_43681766/category_11828804.html)
+
+[一生一芯双周分享会汇总](https://docs.qq.com/sheet/DU05xUmxjWmFvaXhj?tab=8nd1jt)
 
 ## <HopeIcon icon="microchip" size="1.5rem" /> Risc-V
 [The RISC-V Reader](http://riscvbook.com/chinese/RISC-V-Reader-Chinese-v2p1.pdf):   
