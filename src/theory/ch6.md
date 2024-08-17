@@ -1,22 +1,13 @@
 ---
-title: 6. 多核扩展
+title: 6. BlackBox
 icon: hashtag
-description: 多核扩展
+description: Chisel BlackBox
 tag: riscv
 ---
-- 每个核心拥有独立的icache以及dcache.
-但使用共同的外设以及片上内存。
 
-外设部分，通过一个寄存器映射单元，
-将外设的IO端口映射到内存地址空间上。
+BlackBox 的作用是实现Chisel与Verilog模块之间的交互，使用时只需要通过BlackBox定义接口
+既可以在Chisel中将Verilog模块与Chisel模块无缝衔接。
 
-内存模块在一个访存周期内只能接受一个设备的访问。
-各个核心的cache通过一个仲裁器对内存模块进行互斥的访问。
+意义：可以方便采用Vivado中提供的IP核。
 
-## 仲裁器
 
-## 缓存一致性问题
-
-## MSI协议
-
-## 缓存模块

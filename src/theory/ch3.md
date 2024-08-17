@@ -1,5 +1,5 @@
 ---
-title: 3. RISC-V与riscv-mini
+title: 3. riscv-mini
 icon: hashtag
 description: 介绍Riscv和riscv-mini项目
 tag: [riscv, riscv-mini]

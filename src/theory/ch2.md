@@ -1,5 +1,5 @@
 ---
-title: 2. Chisel的基本语法
+title: 2. Chisel Basic
 icon: hashtag
 description: 介绍Chisel的基础语法
 tag: chisel

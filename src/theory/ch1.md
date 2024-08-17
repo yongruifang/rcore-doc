@@ -1,5 +1,5 @@
 ---
-title: 1. Scala的基础语法
+title: 1. Scala Basic
 icon: hashtag
 description: 介绍Scala的基础语法
 tag: scala
